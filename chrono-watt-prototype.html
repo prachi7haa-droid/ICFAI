@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Chrono-Watt</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #050a0e;
+  --bg2: #0a1520;
+  --bg3: #0f1e2e;
+  --border: rgba(0,200,150,0.15);
+  --border2: rgba(0,200,150,0.3);
+  --green: #00c896;
+  --green-dim: #005a42;
+  --amber: #f59e0b;
+  --amber-dim: #78450a;
+  --red: #ef4444;
+  --red-dim: #7f1d1d;
+  --blue: #38bdf8;
+  --blue-dim: #0c4a6e;
+  --purple: #a78bfa;
+  --teal: #2dd4bf;
+  --text: #e2f4ee;
+  --text2: #7ab8a0;
+  --text3: #3d6b58;
+  --card: rgba(10,25,40,0.8);
+  --glow-g: 0 0 20px rgba(0,200,150,0.3);
+  --glow-r: 0 0 20px rgba(239,68,68,0.4);
+  --glow-a: 0 0 20px rgba(245,158,11,0.3);
+  --glow-b: 0 0 20px rgba(56,189,248,0.25);
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-code: 'Space Mono', monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-mono);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ═══ ANIMATED GRID BG ═══ */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,200,150,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,150,0.03) 1px, transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;z-index:0;
+}
+
+.noise{
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+
+/* ═══ NAV ═══ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:56px;
+  background:rgba(5,10,14,0.9);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+.nav-logo{
+  font-family:var(--font-display);
+  font-weight:800;font-size:18px;
+  color:var(--green);
+  letter-spacing:-0.5px;
+}
+.nav-logo span{color:var(--text2)}
+.nav-status{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--text2);
+}
+.pulse-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);
+  box-shadow:var(--glow-g);
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.nav-links{display:flex;gap:4px;}
+.nav-link{
+  font-size:11px;padding:5px 14px;border-radius:4px;
+  color:var(--text2);cursor:pointer;
+  border:1px solid transparent;
+  transition:all .2s;
+  font-family:var(--font-mono);
+}
+.nav-link:hover,.nav-link.active{
+  color:var(--green);border-color:var(--green-dim);
+  background:rgba(0,200,150,0.05);
+}
+
+/* ═══ SECTIONS ═══ */
+.section{
+  position:relative;z-index:1;
+  min-height:100vh;
+  padding:80px 32px 60px;
+  display:none;
+}
+.section.active{display:block}
+
+/* ═══ HERO ═══ */
+#hero{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding-top:100px;
+}
+.hero-eyebrow{
+  font-size:11px;letter-spacing:4px;text-transform:uppercase;
+  color:var(--green);margin-bottom:24px;
+  font-family:var(--font-code);
+}
+.hero-title{
+  font-family:var(--font-display);
+  font-size:clamp(48px,8vw,88px);
+  font-weight:800;line-height:.95;
+  letter-spacing:-3px;
+  margin-bottom:24px;
+}
+.hero-title .accent{color:var(--green)}
+.hero-title .dim{color:var(--text3)}
+.hero-sub{
+  font-size:15px;color:var(--text2);
+  max-width:560px;line-height:1.7;margin-bottom:48px;
+}
+.hero-cta{
+  display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+}
+.btn{
+  padding:12px 28px;border-radius:6px;
+  font-family:var(--font-mono);font-size:13px;
+  cursor:pointer;border:none;transition:all .2s;
+  font-weight:500;
+}
+.btn-primary{
+  background:var(--green);color:#050a0e;
+  box-shadow:var(--glow-g);
+}
+.btn-primary:hover{background:#00e6ae;transform:translateY(-1px)}
+.btn-outline{
+  background:transparent;color:var(--green);
+  border:1px solid var(--green-dim);
+}
+.btn-outline:hover{background:rgba(0,200,150,.08);border-color:var(--green)}
+
+/* ═══ STATS ROW ═══ */
+.stats-row{
+  display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
+  margin-top:64px;
+}
+.stat{text-align:center}
+.stat-num{
+  font-family:var(--font-display);font-size:36px;font-weight:800;
+  color:var(--green);line-height:1;
+}
+.stat-label{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:1px}
+
+/* ═══ SECTION HEADER ═══ */
+.sec-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:20px;
+}
+.sec-tag{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--green);font-family:var(--font-code);margin-bottom:8px;
+}
+.sec-title{
+  font-family:var(--font-display);font-size:32px;font-weight:800;
+  letter-spacing:-1px;
+}
+.sec-meta{font-size:12px;color:var(--text3);font-family:var(--font-code)}
+
+/* ═══ FACTORY FLOOR ═══ */
+.factory-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;margin-bottom:32px;
+}
+.machine-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;padding:24px;
+  position:relative;overflow:hidden;
+  transition:all .3s;cursor:pointer;
+}
+.machine-card:hover{transform:translateY(-3px)}
+.machine-card.safe{border-color:rgba(0,200,150,.4);box-shadow:var(--glow-g)}
+.machine-card.warn{border-color:rgba(245,158,11,.4);box-shadow:var(--glow-a)}
+.machine-card.over{border-color:rgba(239,68,68,.5);box-shadow:var(--glow-r)}
+.machine-card.over .card-glow{
+  position:absolute;inset:0;
+  background:rgba(239,68,68,.03);
+  animation:danger-pulse 1.2s ease-in-out infinite;
+}
+@keyframes danger-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.machine-id{
+  font-size:10px;letter-spacing:3px;color:var(--text3);
+  font-family:var(--font-code);margin-bottom:8px;
+}
+.machine-name{
+  font-family:var(--font-display);font-size:20px;font-weight:700;
+  margin-bottom:4px;
+}
+.machine-type{font-size:12px;color:var(--text2);margin-bottom:20px}
+/* gauge */
+.gauge-wrap{margin-bottom:16px}
+.gauge-label{
+  display:flex;justify-content:space-between;
+  font-size:11px;color:var(--text2);margin-bottom:6px;
+}
+.gauge-track{
+  height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;
+}
+.gauge-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.fill-safe{background:var(--green);box-shadow:0 0 8px rgba(0,200,150,.5)}
+.fill-warn{background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.4)}
+.fill-over{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,.5);animation:fill-pulse 1s ease-in-out infinite}
+@keyframes fill-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;font-size:11px;
+  font-family:var(--font-code);
+}
+.badge-safe{background:rgba(0,200,150,.1);color:var(--green);border:1px solid rgba(0,200,150,.25)}
+.badge-warn{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.badge-over{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3);animation:badge-blink 1.1s ease-in-out infinite}
+@keyframes badge-blink{0%,100%{opacity:1}50%{opacity:.5}}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.machine-metrics{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;
+}
+.metric-mini{
+  background:rgba(255,255,255,.03);border-radius:6px;padding:8px;
+}
+.metric-mini-label{font-size:10px;color:var(--text3);letter-spacing:1px}
+.metric-mini-val{font-size:14px;font-weight:600;color:var(--text)}
+
+/* energy stream SVG */
+.energy-svg{width:100%;height:80px;display:block;margin:16px 0}
+
+/* ═══ DASHBOARD ═══ */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:24px}
+.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:18px 16px;
+}
+.kpi-label{font-size:10px;letter-spacing:2px;color:var(--text3);margin-bottom:8px;font-family:var(--font-code)}
+.kpi-val{font-family:var(--font-display);font-size:28px;font-weight:800;line-height:1}
+.kpi-delta{font-size:11px;margin-top:6px}
+.kpi-green .kpi-val{color:var(--green)}
+.kpi-green .kpi-delta{color:var(--green)}
+.kpi-amber .kpi-val{color:var(--amber)}
+.kpi-blue .kpi-val{color:var(--blue)}
+.kpi-teal .kpi-val{color:var(--teal)}
+
+/* chart area */
+.chart-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:24px;
+}
+.chart-title{font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:20px;color:var(--text)}
+.chart-bars{display:flex;align-items:flex-end;gap:10px;height:130px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{
+  width:100%;border-radius:4px 4px 0 0;
+  transition:height 1s cubic-bezier(.4,0,.2,1);
+  min-height:4px;position:relative;
+}
+.bar-label{font-size:10px;color:var(--text2);text-align:center;margin-top:8px;font-family:var(--font-code)}
+.limit-line{
+  position:absolute;left:0;right:0;border-top:1px dashed rgba(239,68,68,.5);
+}
+
+/* alert feed */
+.alert-feed{display:flex;flex-direction:column;gap:8px}
+.alert-item{
+  padding:10px 14px;border-radius:8px;
+  font-size:12px;border:1px solid;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.alert-red{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25);color:#fca5a5}
+.alert-amber{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.2);color:#fde68a}
+.alert-green{background:rgba(0,200,150,.06);border-color:rgba(0,200,150,.2);color:#6ee7d0}
+.alert-blue{background:rgba(56,189,248,.06);border-color:rgba(56,189,248,.2);color:#7dd3fc}
+.alert-icon{font-size:14px;margin-top:0px;flex-shrink:0}
+.alert-text{flex:1}
+.alert-time{font-size:10px;opacity:.5;margin-top:2px;font-family:var(--font-code)}
+
+/* ═══ SCHEDULING ═══ */
+.schedule-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.sched-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;
+}
+.sched-title{font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:20px}
+.timeline{position:relative;height:160px;margin-bottom:16px}
+.timeline-axis{
+  position:absolute;bottom:24px;left:0;right:0;
+  height:1px;background:var(--border2);
+}
+.timeline-bar{
+  position:absolute;bottom:25px;
+  border-radius:4px 4px 0 0;
+  transition:height .8s ease;
+}
+.t-peak{background:rgba(239,68,68,.6)}
+.t-offpeak{background:rgba(0,200,150,.5)}
+.t-solar{background:rgba(56,189,248,.5)}
+.t-ai{background:var(--green);box-shadow:var(--glow-g)}
+.t-label{
+  position:absolute;bottom:4px;font-size:9px;
+  color:var(--text3);font-family:var(--font-code);transform:translateX(-50%);
+}
+.ai-rec{
+  background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);
+  border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text2);
+}
+.ai-rec strong{color:var(--green)}
+
+/* reuse flow */
+.reuse-flow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin:16px 0}
+.flow-node{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:8px;padding:12px;text-align:center;
+}
+.flow-node-title{font-size:12px;font-weight:600;margin-bottom:4px}
+.flow-node-val{font-size:18px;font-weight:800;font-family:var(--font-display)}
+.flow-arrow{
+  font-size:24px;color:var(--teal);
+  animation:flow-arrow-anim 1.5s ease-in-out infinite;
+}
+@keyframes flow-arrow-anim{0%,100%{opacity:.4;transform:translateX(-3px)}50%{opacity:1;transform:translateX(3px)}}
+
+/* ═══ PREDICTIVE MAINTENANCE ═══ */
+.maint-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.maint-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;
+}
+.fault-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px;border-radius:8px;margin-bottom:10px;
+  border:1px solid;cursor:pointer;transition:all .2s;
+}
+.fault-item:hover{transform:translateX(3px)}
+.fault-high{background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.25)}
+.fault-med{background:rgba(245,158,11,.05);border-color:rgba(245,158,11,.2)}
+.fault-low{background:rgba(56,189,248,.05);border-color:rgba(56,189,248,.2)}
+.fault-icon{font-size:22px;width:36px;text-align:center}
+.fault-info{flex:1}
+.fault-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.fault-desc{font-size:11px;color:var(--text2)}
+.fault-conf{
+  font-family:var(--font-display);font-size:18px;font-weight:800;
+}
+.conf-high{color:var(--red)}
+.conf-med{color:var(--amber)}
+.conf-low{color:var(--blue)}
+
+/* waveform */
+.waveform-wrap{position:relative;height:80px;overflow:hidden;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.waveform-wrap canvas{width:100%!important;height:80px!important}
+
+/* ═══ TRADE-OFFS ═══ */
+.tradeoff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px}
+.scenario-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:24px;position:relative;
+  transition:all .3s;cursor:pointer;
+}
+.scenario-card:hover{transform:translateY(-4px)}
+.scenario-card.recommended{
+  border-color:var(--green);box-shadow:var(--glow-g);
+}
+.rec-badge{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#050a0e;
+  font-size:10px;padding:3px 12px;border-radius:20px;
+  font-family:var(--font-code);font-weight:700;white-space:nowrap;
+}
+.scenario-name{
+  font-family:var(--font-display);font-size:18px;font-weight:700;
+  margin-bottom:16px;
+}
+.scenario-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;
+}
+.scenario-row:last-child{border-bottom:none}
+.scenario-key{color:var(--text2)}
+.scenario-val{font-weight:700;font-family:var(--font-display);font-size:16px}
+.val-good{color:var(--green)}
+.val-warn{color:var(--amber)}
+.val-bad{color:var(--red)}
+.val-neu{color:var(--blue)}
+
+/* XAI panel */
+.xai-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:24px;
+}
+.xai-title{font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:20px}
+.xai-factor{
+  display:flex;align-items:center;gap:14px;margin-bottom:12px;
+}
+.xai-name{font-size:12px;color:var(--text2);width:160px;flex-shrink:0}
+.xai-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.xai-bar-fill{height:100%;border-radius:3px;background:var(--blue);transition:width 1s ease}
+.xai-pct{font-size:12px;color:var(--text);width:36px;text-align:right;font-family:var(--font-code)}
+
+/* ═══ CLOSING HOOK ═══ */
+#closing{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;
+}
+.hook-quote{
+  font-family:var(--font-display);font-size:clamp(22px,3vw,38px);
+  font-weight:800;line-height:1.25;max-width:720px;
+  letter-spacing:-1.5px;margin-bottom:48px;
+}
+.hook-quote .hl{color:var(--green)}
+.hook-quote .hl2{color:var(--teal)}
+.hook-quote .hl3{color:var(--amber)}
+.impact-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:20px;
+  width:100%;max-width:760px;margin-bottom:48px;
+}
+.impact-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:20px;text-align:center;
+}
+.impact-num{
+  font-family:var(--font-display);font-size:32px;font-weight:800;
+  color:var(--green);margin-bottom:6px;
+}
+.impact-label{font-size:11px;color:var(--text2);line-height:1.4}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .factory-grid,.dash-grid,.maint-grid,.schedule-grid,.tradeoff-grid{grid-template-columns:1fr}
+  .dash-kpis{grid-template-columns:repeat(2,1fr)}
+  .impact-grid{grid-template-columns:repeat(2,1fr)}
+  .hero-title{font-size:40px;letter-spacing:-2px}
+}
+
+/* ═══ ENTRY ANIMATION ═══ */
+@keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fade-up .6s ease both}
+.fade-up-1{animation-delay:.1s}
+.fade-up-2{animation-delay:.2s}
+.fade-up-3{animation-delay:.3s}
+.fade-up-4{animation-delay:.4s}
+.fade-up-5{animation-delay:.5s}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">CHRONO<span>-WATT</span></div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="showSection('hero',this)">Overview</div>
+    <div class="nav-link" onclick="showSection('factory',this)">Factory</div>
+    <div class="nav-link" onclick="showSection('dashboard',this)">Dashboard</div>
+    <div class="nav-link" onclick="showSection('scheduling',this)">Schedule</div>
+    <div class="nav-link" onclick="showSection('maintenance',this)">Maintenance</div>
+    <div class="nav-link" onclick="showSection('tradeoffs',this)">Trade-offs</div>
+    <div class="nav-link" onclick="showSection('closing',this)">Impact</div>
+  </div>
+  <div class="nav-status"><div class="pulse-dot"></div>LIVE MONITORING</div>
+</nav>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 1: HERO -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section active" id="hero">
+  <div class="hero-eyebrow fade-up">Sustainability Hackathon Prototype</div>
+  <h1 class="hero-title fade-up fade-up-1">
+    <span class="accent">Chrono</span><br>
+    <span class="dim">Watt</span>
+  </h1>
+  <p class="hero-sub fade-up fade-up-2">
+    Factories waste energy, emit carbon, and fail silently. Chrono-Watt listens to machines through their energy signatures — predicting faults, enforcing carbon limits, and reusing what's left behind.
+  </p>
+  <div class="hero-cta fade-up fade-up-3">
+    <button class="btn btn-primary" onclick="showSection('factory',document.querySelectorAll('.nav-link')[1])">Explore Prototype →</button>
+    <button class="btn btn-outline" onclick="showSection('dashboard',document.querySelectorAll('.nav-link')[2])">View Dashboard</button>
+  </div>
+  <div class="stats-row fade-up fade-up-4">
+    <div class="stat"><div class="stat-num">&gt;91%</div><div class="stat-label">AI Accuracy</div></div>
+    <div class="stat"><div class="stat-num">−22%</div><div class="stat-label">CO₂ Reduction</div></div>
+    <div class="stat"><div class="stat-num">4x</div><div class="stat-label">Outcomes Predicted</div></div>
+    <div class="stat"><div class="stat-num">£840</div><div class="stat-label">Saved / Day</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 2: FACTORY FLOOR -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="factory">
+  <div class="sec-header">
+    <div>
+      <div class="sec-tag">01 — Factory Floor</div>
+      <div class="sec-title">Machine Carbon Gauges</div>
+    </div>
+    <div class="sec-meta" id="factory-clock">00:00:00</div>
+  </div>
+
+  <div class="factory-grid">
+    <!-- Machine A -->
+    <div class="machine-card safe">
+      <div class="machine-id">MCH-001 · STAMPING</div>
+      <div class="machine-name">Machine A</div>
+      <div class="machine-type">Hydraulic Stamping Press</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label"><span>CO₂ Budget</span><span id="ma-pct">42%</span></div>
+        <div class="gauge-track"><div class="gauge-fill fill-safe" id="ma-fill" style="width:42%"></div></div>
+      </div>
+      <span class="status-badge badge-safe"><span class="badge-dot"></span>SAFE — 42 / 100 kg</span>
+      <div class="machine-metrics">
+        <div class="metric-mini"><div class="metric-mini-label">YIELD</div><div class="metric-mini-val">98.2%</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">QUALITY</div><div class="metric-mini-val">A+</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">ENERGY</div><div class="metric-mini-val">4.2 kW</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">MAINT</div><div class="metric-mini-val" style="color:var(--green)">OK</div></div>
+      </div>
+    </div>
+
+    <!-- Machine B -->
+    <div class="machine-card warn">
+      <div class="machine-id">MCH-002 · CNC</div>
+      <div class="machine-name">Machine B</div>
+      <div class="machine-type">5-Axis CNC Router</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label"><span>CO₂ Budget</span><span id="mb-pct">78%</span></div>
+        <div class="gauge-track"><div class="gauge-fill fill-warn" id="mb-fill" style="width:78%"></div></div>
+      </div>
+      <span class="status-badge badge-warn"><span class="badge-dot"></span>WARNING — 78 / 100 kg</span>
+      <div class="machine-metrics">
+        <div class="metric-mini"><div class="metric-mini-label">YIELD</div><div class="metric-mini-val">94.1%</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">QUALITY</div><div class="metric-mini-val" style="color:var(--amber)">B</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">ENERGY</div><div class="metric-mini-val">9.8 kW</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">MAINT</div><div class="metric-mini-val" style="color:var(--amber)">WATCH</div></div>
+      </div>
+    </div>
+
+    <!-- Machine C -->
+    <div class="machine-card over">
+      <div class="card-glow"></div>
+      <div class="machine-id">MCH-003 · MOLDING</div>
+      <div class="machine-name">Machine C</div>
+      <div class="machine-type">Injection Mold Press</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label"><span>CO₂ Budget</span><span id="mc-pct" style="color:var(--red)">103%</span></div>
+        <div class="gauge-track"><div class="gauge-fill fill-over" id="mc-fill" style="width:100%"></div></div>
+      </div>
+      <span class="status-badge badge-over"><span class="badge-dot"></span>LIMIT EXCEEDED — RESTRICTED</span>
+      <div class="machine-metrics">
+        <div class="metric-mini"><div class="metric-mini-label">YIELD</div><div class="metric-mini-val" style="color:var(--amber)">88.5%</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">QUALITY</div><div class="metric-mini-val" style="color:var(--red)">C</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">ENERGY</div><div class="metric-mini-val" style="color:var(--red)">14.6 kW</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">ACTION</div><div class="metric-mini-val" style="color:var(--red)">THROTTLE</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Energy Flow SVG -->
+  <div class="chart-card">
+    <div class="chart-title">Live Energy Pipeline — Reuse Flows</div>
+    <svg id="energy-flow-svg" viewBox="0 0 760 110" style="width:100%;height:110px">
+      <defs>
+        <marker id="ae" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+      </defs>
+      <!-- Machines -->
+      <rect x="20" y="30" width="120" height="48" rx="8" fill="rgba(0,200,150,.08)" stroke="rgba(0,200,150,.4)" stroke-width="1"/>
+      <text x="80" y="50" text-anchor="middle" font-size="11" fill="#00c896" font-family="IBM Plex Mono">Machine A</text>
+      <text x="80" y="68" text-anchor="middle" font-size="10" fill="#7ab8a0" font-family="IBM Plex Mono">42 kg CO₂</text>
+
+      <rect x="320" y="30" width="120" height="48" rx="8" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.4)" stroke-width="1"/>
+      <text x="380" y="50" text-anchor="middle" font-size="11" fill="#f59e0b" font-family="IBM Plex Mono">Machine B</text>
+      <text x="380" y="68" text-anchor="middle" font-size="10" fill="#7ab8a0" font-family="IBM Plex Mono">78 kg CO₂</text>
+
+      <rect x="620" y="30" width="120" height="48" rx="8" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.5)" stroke-width="1.5"/>
+      <text x="680" y="50" text-anchor="middle" font-size="11" fill="#ef4444" font-family="IBM Plex Mono">Machine C</text>
+      <text x="680" y="68" text-anchor="middle" font-size="10" fill="#ef4444" font-family="IBM Plex Mono">103 kg !</text>
+
+      <!-- Pipes A→B -->
+      <line x1="140" y1="54" x2="320" y2="54" stroke="#00c896" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#ae)">
+        <animate attributeName="stroke-dashoffset" values="0;-26" dur="1s" repeatCount="indefinite"/>
+      </line>
+      <text x="230" y="45" text-anchor="middle" font-size="10" fill="#00c896" font-family="IBM Plex Mono">4.2 kWh</text>
+
+      <!-- Pipes B→C -->
+      <line x1="440" y1="54" x2="620" y2="54" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#ae)">
+        <animate attributeName="stroke-dashoffset" values="0;-26" dur="1s" repeatCount="indefinite"/>
+      </line>
+      <text x="530" y="45" text-anchor="middle" font-size="10" fill="#f59e0b" font-family="IBM Plex Mono">9.8 kWh</text>
+
+      <!-- Reuse loop A→bottom heat -->
+      <path d="M80 78 Q80 100 200 100 Q280 100 380 90" stroke="#2dd4bf" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#ae)">
+        <animate attributeName="stroke-dashoffset" values="0;-20" dur="1.4s" repeatCount="indefinite"/>
+      </path>
+      <text x="230" y="98" text-anchor="middle" font-size="10" fill="#2dd4bf" font-family="IBM Plex Mono">↻ 18 kWh reuse</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 3: DASHBOARD -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="dashboard">
+  <div class="sec-header">
+    <div>
+      <div class="sec-tag">02 — Live View</div>
+      <div class="sec-title">Carbon Footprint Dashboard</div>
+    </div>
+    <div class="sec-meta" id="dash-clock">LIVE</div>
+  </div>
+
+  <div class="dash-kpis">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">TOTAL CO₂ TODAY</div>
+      <div class="kpi-val">243 kg</div>
+      <div class="kpi-delta">▼ 18% vs yesterday</div>
+    </div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">ENERGY USED</div>
+      <div class="kpi-val">1,840 kWh</div>
+      <div class="kpi-delta" style="color:var(--blue)">▼ 12% vs target</div>
+    </div>
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-label">ENERGY REUSED</div>
+      <div class="kpi-val">220 kWh</div>
+      <div class="kpi-delta" style="color:var(--teal)">↻ 12% of consumed</div>
+    </div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-label">AI ACCURACY</div>
+      <div class="kpi-val">91.4%</div>
+      <div class="kpi-delta" style="color:var(--amber)">4-outcome model</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="chart-card">
+      <div class="chart-title">CO₂ Per Machine (kg) — vs. 100 kg limit</div>
+      <div style="position:relative">
+        <div class="chart-bars" id="chart-bars">
+          <!-- bars injected by JS -->
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;font-family:var(--font-code)">
+          — dashed line = 100 kg carbon budget limit per machine
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="chart-card" style="margin-bottom:16px">
+        <div class="chart-title">Live Alerts</div>
+        <div class="alert-feed" id="alert-feed">
+          <div class="alert-item alert-red">
+            <div class="alert-icon">⚠</div>
+            <div class="alert-text">Machine C exceeded carbon budget (103 kg)
+              <div class="alert-time">Just now</div>
+            </div>
+          </div>
+          <div class="alert-item alert-amber">
+            <div class="alert-icon">◆</div>
+            <div class="alert-text">Machine B at 78% — approaching limit
+              <div class="alert-time">4 min ago</div>
+            </div>
+          </div>
+          <div class="alert-item alert-green">
+            <div class="alert-icon">↻</div>
+            <div class="alert-text">22 kWh excess heat redirected to pre-heater
+              <div class="alert-time">12 min ago</div>
+            </div>
+          </div>
+          <div class="alert-item alert-blue">
+            <div class="alert-icon">◎</div>
+            <div class="alert-text">Off-peak window opens 22:00 — high-load jobs deferred
+              <div class="alert-time">18 min ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Batch sparkline -->
+      <div class="chart-card">
+        <div class="chart-title">Batch Emissions Today</div>
+        <canvas id="sparkline" height="60"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 4: SCHEDULING -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="scheduling">
+  <div class="sec-header">
+    <div>
+      <div class="sec-tag">03 — Smart Scheduling + Energy Reuse</div>
+      <div class="sec-title">Peak-Aware Scheduling</div>
+    </div>
+  </div>
+
+  <div class="schedule-grid">
+    <!-- Left: timeline -->
+    <div class="sched-card">
+      <div class="sched-title">Grid Tariff & Renewable Window</div>
+      <div class="timeline" id="sched-timeline">
+        <!-- bars via JS -->
+      </div>
+      <div class="ai-rec">
+        <strong>AI Recommendation:</strong> Run injection molding (Machine C) between <strong>22:00–05:00</strong> when solar surplus + off-peak tariff reduces CO₂ intensity by 34%. Estimated saving: <strong>28 kg CO₂/shift</strong>.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:12px;font-size:11px;color:var(--text2)">
+        <span style="color:var(--red)">■</span> Peak tariff &nbsp;
+        <span style="color:var(--green)">■</span> AI run window &nbsp;
+        <span style="color:var(--blue)">■</span> Solar peak
+      </div>
+    </div>
+
+    <!-- Right: reuse flows -->
+    <div class="sched-card">
+      <div class="sched-title">Energy Reuse Pathways</div>
+      <!-- Source -->
+      <div class="reuse-flow">
+        <div class="flow-node">
+          <div class="flow-node-title" style="color:var(--amber)">Machine B</div>
+          <div style="font-size:11px;color:var(--text2)">Excess heat</div>
+          <div class="flow-node-val" style="color:var(--amber)">18 kWh</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div>
+          <div class="flow-node" style="margin-bottom:10px">
+            <div class="flow-node-title" style="color:var(--teal)">Water Pre-heater</div>
+            <div class="flow-node-val" style="color:var(--teal)">11 kWh</div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title" style="color:var(--green)">Material Dryer</div>
+            <div class="flow-node-val" style="color:var(--green)">7 kWh</div>
+          </div>
+        </div>
+      </div>
+      <!-- Vibration -->
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Vibration Recovery (Piezoelectric)</div>
+        <div class="reuse-flow">
+          <div class="flow-node">
+            <div class="flow-node-title" style="color:var(--purple)">All Machines</div>
+            <div style="font-size:11px;color:var(--text2)">Vibration</div>
+            <div class="flow-node-val" style="color:var(--purple)">0.8 kWh</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="flow-node-title" style="color:var(--purple)">Sensor Grid</div>
+            <div style="font-size:11px;color:var(--text2)">Self-powered</div>
+            <div class="flow-node-val" style="color:var(--purple)">∞</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:rgba(0,200,150,.06);border:1px solid rgba(0,200,150,.2);border-radius:8px;padding:12px;margin-top:16px;font-size:12px;color:var(--green)">
+        Total avoided: <strong style="font-size:16px">22 kWh / shift</strong> → <strong>11 kg CO₂</strong> per production run
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 5: PREDICTIVE MAINTENANCE -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="maintenance">
+  <div class="sec-header">
+    <div>
+      <div class="sec-tag">04 — Predictive Maintenance</div>
+      <div class="sec-title">Early Fault Detection</div>
+    </div>
+  </div>
+
+  <div class="maint-grid">
+    <div class="maint-card">
+      <div class="chart-title">Detected Faults — Live</div>
+      <div class="fault-item fault-high">
+        <div class="fault-icon">⚙</div>
+        <div class="fault-info">
+          <div class="fault-name">Bearing Wear — Machine B</div>
+          <div class="fault-desc">Irregular frequency spike at 1,240 Hz · Est. failure in 14 ± 3 hrs</div>
+        </div>
+        <div class="fault-conf conf-high">87%</div>
+      </div>
+      <div class="fault-item fault-med">
+        <div class="fault-icon">⧖</div>
+        <div class="fault-info">
+          <div class="fault-name">Clogged Filter — Machine C</div>
+          <div class="fault-desc">Pressure delta +22% above baseline · Energy waste +19%</div>
+        </div>
+        <div class="fault-conf conf-med">73%</div>
+      </div>
+      <div class="fault-item fault-low">
+        <div class="fault-icon">◎</div>
+        <div class="fault-info">
+          <div class="fault-name">Lubrication Degraded — Machine A</div>
+          <div class="fault-desc">Friction signature elevated · Est. onset in 72+ hrs</div>
+        </div>
+        <div class="fault-conf conf-low">41%</div>
+      </div>
+    </div>
+
+    <div class="maint-card">
+      <div class="chart-title">Energy Signature — Machine B (anomaly)</div>
+      <canvas id="waveform-canvas" height="80" style="width:100%;background:rgba(255,255,255,.02);border-radius:6px;border:1px solid var(--border)"></canvas>
+      <div style="margin-top:12px;font-size:11px;color:var(--amber)">▲ Irregular spike pattern at 1,240 Hz — bearing wear signature</div>
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="metric-mini"><div class="metric-mini-label">BEARING CONF.</div><div class="metric-mini-val" style="color:var(--red)">87%</div></div>
+          <div class="metric-mini"><div class="metric-mini-label">TIME TO FAIL</div><div class="metric-mini-val" style="color:var(--amber)">14 hrs</div></div>
+          <div class="metric-mini"><div class="metric-mini-label">ENERGY WASTE</div><div class="metric-mini-val" style="color:var(--amber)">+19%</div></div>
+          <div class="metric-mini"><div class="metric-mini-label">CO₂ IF FIXED NOW</div><div class="metric-mini-val" style="color:var(--green)">−38 kg</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action path -->
+  <div class="chart-card">
+    <div class="chart-title">Maintenance Action Path</div>
+    <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding:8px 0">
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:12px 20px;text-align:center;min-width:130px">
+        <div style="font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:4px">STEP 1</div>
+        <div style="font-size:13px;font-weight:600">Anomaly flagged</div>
+        <div style="font-size:10px;color:var(--text2)">t = 0</div>
+      </div>
+      <div style="color:var(--text3);font-size:20px;padding:0 8px">→</div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px 20px;text-align:center;min-width:130px">
+        <div style="font-size:10px;color:var(--amber);letter-spacing:2px;margin-bottom:4px">STEP 2</div>
+        <div style="font-size:13px;font-weight:600">Operator notified</div>
+        <div style="font-size:10px;color:var(--text2)">t + 2 min</div>
+      </div>
+      <div style="color:var(--text3);font-size:20px;padding:0 8px">→</div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px 20px;text-align:center;min-width:130px">
+        <div style="font-size:10px;color:var(--amber);letter-spacing:2px;margin-bottom:4px">STEP 3</div>
+        <div style="font-size:13px;font-weight:600">Part ordered</div>
+        <div style="font-size:10px;color:var(--text2)">t + 1 hr</div>
+      </div>
+      <div style="color:var(--text3);font-size:20px;padding:0 8px">→</div>
+      <div style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);border-radius:8px;padding:12px 20px;text-align:center;min-width:130px">
+        <div style="font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:4px">STEP 4</div>
+        <div style="font-size:13px;font-weight:600">Bearing replaced</div>
+        <div style="font-size:10px;color:var(--text2)">t + 4 hrs</div>
+      </div>
+      <div style="color:var(--text3);font-size:20px;padding:0 8px">→</div>
+      <div style="background:rgba(0,200,150,.1);border:1px solid var(--green);border-radius:8px;padding:12px 20px;text-align:center;min-width:130px">
+        <div style="font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:4px">RESULT</div>
+        <div style="font-size:13px;font-weight:600;color:var(--green)">38 kg CO₂ saved</div>
+        <div style="font-size:10px;color:var(--text2)">0 unplanned stops</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 6: TRADE-OFFS -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="tradeoffs">
+  <div class="sec-header">
+    <div>
+      <div class="sec-tag">05 — Adaptive Carbon Constraints</div>
+      <div class="sec-title">AI Trade-off Modeling</div>
+    </div>
+  </div>
+
+  <div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:14px 20px;margin-bottom:28px;font-size:13px;color:var(--blue)">
+    Chrono-Watt simultaneously predicts <strong>quality · yield · performance · energy</strong> — then models trade-offs so operators choose the right balance for each shift.
+  </div>
+
+  <div class="tradeoff-grid">
+    <div class="scenario-card">
+      <div class="scenario-name" style="color:var(--green)">Conservative</div>
+      <div class="scenario-row"><span class="scenario-key">Energy reduction</span><span class="scenario-val val-good">−15%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Yield impact</span><span class="scenario-val val-bad">−5%</span></div>
+      <div class="scenario-row"><span class="scenario-key">CO₂ improvement</span><span class="scenario-val val-good">+22%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Quality</span><span class="scenario-val val-warn">B+</span></div>
+      <div class="scenario-row"><span class="scenario-key">Cost saving</span><span class="scenario-val val-good">£1,100/d</span></div>
+      <div style="margin-top:14px;font-size:11px;color:var(--text2)">Best for compliance audits & ESG reporting goals</div>
+    </div>
+
+    <div class="scenario-card recommended">
+      <div class="rec-badge">★ AI RECOMMENDED</div>
+      <div class="scenario-name" style="color:var(--blue)">Balanced</div>
+      <div class="scenario-row"><span class="scenario-key">Energy reduction</span><span class="scenario-val val-good">−10%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Yield impact</span><span class="scenario-val val-warn">−2%</span></div>
+      <div class="scenario-row"><span class="scenario-key">CO₂ improvement</span><span class="scenario-val val-good">+15%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Quality</span><span class="scenario-val val-neu">A</span></div>
+      <div class="scenario-row"><span class="scenario-key">Cost saving</span><span class="scenario-val val-good">£840/d</span></div>
+      <div style="margin-top:14px;font-size:11px;color:var(--blue)">Optimal: sustainability + throughput, 97% nominal perf</div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-name" style="color:var(--amber)">Production-First</div>
+      <div class="scenario-row"><span class="scenario-key">Energy reduction</span><span class="scenario-val val-warn">−4%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Yield impact</span><span class="scenario-val val-good">0%</span></div>
+      <div class="scenario-row"><span class="scenario-key">CO₂ improvement</span><span class="scenario-val val-warn">+6%</span></div>
+      <div class="scenario-row"><span class="scenario-key">Quality</span><span class="scenario-val val-good">A+</span></div>
+      <div class="scenario-row"><span class="scenario-key">Cost saving</span><span class="scenario-val val-warn">£280/d</span></div>
+      <div style="margin-top:14px;font-size:11px;color:var(--text2)">Maximum throughput, minimal green penalty</div>
+    </div>
+  </div>
+
+  <!-- XAI -->
+  <div class="xai-panel">
+    <div class="xai-title">Explainability — Why the AI chose "Balanced"</div>
+    <div class="xai-factor">
+      <div class="xai-name">Spindle speed (B)</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:34%"></div></div>
+      <div class="xai-pct">34%</div>
+    </div>
+    <div class="xai-factor">
+      <div class="xai-name">Ambient temperature</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:21%"></div></div>
+      <div class="xai-pct">21%</div>
+    </div>
+    <div class="xai-factor">
+      <div class="xai-name">Batch size</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:18%"></div></div>
+      <div class="xai-pct">18%</div>
+    </div>
+    <div class="xai-factor">
+      <div class="xai-name">Time-of-day tariff</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:14%"></div></div>
+      <div class="xai-pct">14%</div>
+    </div>
+    <div class="xai-factor">
+      <div class="xai-name">Renewable availability</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:9%"></div></div>
+      <div class="xai-pct">9%</div>
+    </div>
+    <div class="xai-factor">
+      <div class="xai-name">Maintenance risk score</div>
+      <div class="xai-bar-track"><div class="xai-bar-fill" style="width:4%"></div></div>
+      <div class="xai-pct">4%</div>
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:var(--text2);border-top:1px solid var(--border);padding-top:14px">
+      Every AI decision is fully traceable. Operators can override at any time — Chrono-Watt advises, humans decide.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 7: CLOSING HOOK -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="closing">
+  <div style="max-width:800px;margin:0 auto;padding-top:40px">
+    <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--green);margin-bottom:32px;text-align:center;font-family:var(--font-code)">
+      Project Chrono-Watt — Impact Summary
+    </div>
+    <div class="hook-quote">
+      Factories don't just <span class="hl">consume</span> energy —<br>
+      they <span class="hl2">speak</span> through it.<br>
+      <span style="font-size:.65em;color:var(--text2)">Chrono-Watt <span class="hl">listens</span>, sets <span class="hl3">limits</span>,<br>reuses <span class="hl2">waste</span>, and cuts carbon.</span>
+    </div>
+
+    <div class="impact-grid">
+      <div class="impact-box">
+        <div class="impact-num">&gt;91%</div>
+        <div class="impact-label">Prediction accuracy across 4 simultaneous outcomes</div>
+      </div>
+      <div class="impact-box">
+        <div class="impact-num">−22%</div>
+        <div class="impact-label">CO₂ reduction per production run</div>
+      </div>
+      <div class="impact-box">
+        <div class="impact-num">12%</div>
+        <div class="impact-label">Total energy reused instead of wasted</div>
+      </div>
+      <div class="impact-box">
+        <div class="impact-num">£840</div>
+        <div class="impact-label">Cost savings per day per factory line</div>
+      </div>
+    </div>
+
+    <!-- Feature checklist -->
+    <div class="chart-card" style="text-align:left">
+      <div class="chart-title" style="margin-bottom:20px">All Features — Built In</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Per-machine carbon budget gauges + enforcement</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Energy reuse routing (heat, vibration)</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Smart off-peak + renewable scheduling</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Real-time carbon footprint dashboard</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Predictive maintenance (fault detection)</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Adaptive carbon constraint trade-off modeling</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Explainable AI — every decision is traceable</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2)"><span style="color:var(--green);margin-top:1px">✓</span>Sensor data cleaning + hidden pattern detection</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ═══ NAVIGATION ═══
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (el) el.classList.add('active');
+  // init on show
+  if (id === 'dashboard') initDashboard();
+  if (id === 'scheduling') initSchedule();
+  if (id === 'maintenance') initMaintenance();
+  window.scrollTo(0,0);
+}
+
+// ═══ LIVE CLOCK ═══
+function updateClock() {
+  const now = new Date();
+  const t = now.toTimeString().split(' ')[0];
+  const el = document.getElementById('factory-clock');
+  const el2 = document.getElementById('dash-clock');
+  if (el) el.textContent = t;
+  if (el2) el2.textContent = 'LIVE · ' + t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══ GAUGE SIMULATION ═══
+function simGauges() {
+  const noise = () => (Math.random() - 0.5) * 2;
+  let ma = 42, mb = 78;
+  setInterval(() => {
+    ma = Math.max(30, Math.min(65, ma + noise()));
+    mb = Math.max(68, Math.min(90, mb + noise() * 1.5));
+    const maEl = document.getElementById('ma-fill');
+    const mbEl = document.getElementById('mb-fill');
+    const maPct = document.getElementById('ma-pct');
+    const mbPct = document.getElementById('mb-pct');
+    if (maEl) { maEl.style.width = ma.toFixed(0) + '%'; maPct.textContent = ma.toFixed(0) + '%'; }
+    if (mbEl) { mbEl.style.width = mb.toFixed(0) + '%'; mbPct.textContent = mb.toFixed(0) + '%'; }
+  }, 2000);
+}
+simGauges();
+
+// ═══ DASHBOARD BARS ═══
+function initDashboard() {
+  const container = document.getElementById('chart-bars');
+  if (!container || container.childElementCount > 0) return;
+  const machines = [
+    { label: 'A', val: 42, color: '#00c896' },
+    { label: 'B', val: 78, color: '#f59e0b' },
+    { label: 'C', val: 103, color: '#ef4444' },
+    { label: 'D', val: 35, color: '#00c896' },
+    { label: 'E', val: 28, color: '#2dd4bf' },
+  ];
+  const maxH = 120;
+  machines.forEach(m => {
+    const pct = Math.min(m.val / 110, 1);
+    const h = Math.round(pct * maxH);
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+    group.innerHTML = `
+      <div style="position:relative;width:100%;height:${maxH}px;display:flex;align-items:flex-end">
+        <div class="bar" style="width:100%;height:0;background:${m.color};opacity:${m.val>100?.9:.7}" 
+             data-h="${h}"></div>
+        ${m.val > 100 ? `<div class="limit-line" style="bottom:${Math.round(100/110*maxH)}px"></div>` : ''}
+      </div>
+      <div class="bar-label">${m.label}<br>${m.val} kg</div>`;
+    container.appendChild(group);
+    // animate in
+    setTimeout(() => {
+      const bar = group.querySelector('.bar');
+      if (bar) bar.style.height = h + 'px';
+    }, 200);
+  });
+
+  // sparkline
+  const canvas = document.getElementById('sparkline');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio || 400;
+  canvas.height = 60 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth || 400, H = 60;
+  const pts = [95,88,92,82,87,75,79,70,74,66,69,61,65];
+  const limit = 80;
+  // limit line
+  ctx.strokeStyle = 'rgba(239,68,68,0.4)';
+  ctx.setLineDash([4,3]);
+  ctx.lineWidth = 1;
+  const ly = H - (limit/100)*H;
+  ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke();
+  ctx.setLineDash([]);
+  // sparkline
+  ctx.strokeStyle = '#00c896';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  pts.forEach((v,i) => {
+    const x = (i/(pts.length-1))*W;
+    const y = H - (v/100)*H;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // fill
+  ctx.beginPath();
+  pts.forEach((v,i) => {
+    const x = (i/(pts.length-1))*W;
+    const y = H - (v/100)*H;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle = 'rgba(0,200,150,0.08)';
+  ctx.fill();
+}
+
+// ═══ SCHEDULE TIMELINE ═══
+function initSchedule() {
+  const container = document.getElementById('sched-timeline');
+  if (!container || container.childElementCount > 0) return;
+  const hours = [
+    {h:'0h', type:'t-offpeak', height:40},
+    {h:'3h', type:'t-offpeak', height:35},
+    {h:'6h', type:'t-solar', height:55},
+    {h:'9h', type:'t-peak', height:110},
+    {h:'12h', type:'t-peak', height:130},
+    {h:'15h', type:'t-peak', height:120},
+    {h:'18h', type:'t-peak', height:100},
+    {h:'21h', type:'t-offpeak', height:45},
+    {h:'22h', type:'t-ai', height:65},
+    {h:'24h', type:'t-ai', height:60},
+  ];
+  const totalW = container.offsetWidth || 400;
+  const bw = Math.floor((totalW - 40) / hours.length) - 4;
+  hours.forEach((item, i) => {
+    const bar = document.createElement('div');
+    bar.className = `timeline-bar ${item.type}`;
+    bar.style.cssText = `left:${20 + i*(bw+4)}px;width:${bw}px;height:0;bottom:25px;border-radius:4px 4px 0 0`;
+    const lbl = document.createElement('div');
+    lbl.className = 't-label';
+    lbl.style.cssText = `left:${20 + i*(bw+4) + bw/2}px`;
+    lbl.textContent = item.h;
+    container.appendChild(bar);
+    container.appendChild(lbl);
+    setTimeout(() => { bar.style.height = item.height + 'px'; }, 300 + i*60);
+  });
+  // axis
+  const axis = document.createElement('div');
+  axis.className = 'timeline-axis';
+  container.appendChild(axis);
+}
+
+// ═══ WAVEFORM ═══
+function initMaintenance() {
+  const canvas = document.getElementById('waveform-canvas');
+  if (!canvas || canvas._drawn) return;
+  canvas._drawn = true;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+  canvas.height = 80 * (window.devicePixelRatio || 1);
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  const W = canvas.offsetWidth || 400, H = 80;
+  let phase = 0;
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(0,200,150,0.15)';
+    ctx.lineWidth = 0.5;
+    for (let y=10;y<H;y+=20) {
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+    ctx.strokeStyle = '#00c896';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x=0;x<W;x++) {
+      const t = (x/W)*Math.PI*20 + phase;
+      // normal signal + anomaly spikes
+      let y = H/2 + Math.sin(t)*10 + Math.sin(t*0.3)*5;
+      // inject bearing wear spikes
+      const spike = Math.sin(t*3.7)*Math.exp(-Math.pow((x/W*20 - Math.round(x/W*20)),2)*3);
+      y += spike * 22;
+      if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    // anomaly highlight
+    ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(0,H/2-25);ctx.lineTo(W,H/2-25);ctx.stroke();
+    ctx.setLineDash([]);
+    phase += 0.04;
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+</script>
+</body>
+</html>
