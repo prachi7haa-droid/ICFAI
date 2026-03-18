@@ -1,0 +1,473 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.root{width:100%;background:#1A1F2E;border-radius:12px;overflow:hidden;font-family:var(--font-sans)}
+.header{background:#0D1117;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2D3748}
+.logo{color:#E2E8F0;font-size:13px;font-weight:500;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.pulse-dot{width:7px;height:7px;background:#22D3EE;border-radius:50%;animation:pd 1.6s infinite}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+.hbadge{background:#0F2840;color:#38BDF8;font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid #1E4060}
+.score-chip{background:#0D2D1E;color:#34D399;font-size:11px;padding:2px 10px;border-radius:3px;border:1px solid #1A4D34;font-weight:500}
+.layout{display:grid;grid-template-columns:190px 1fr 210px;height:460px}
+.sidebar{background:#111827;border-right:1px solid #1F2937;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
+.sidebar:last-child{border-right:none;border-left:1px solid #1F2937}
+.panel-lbl{font-size:9px;letter-spacing:1.5px;color:#6B7280;text-transform:uppercase;padding:4px 0 6px;border-bottom:1px solid #1F2937;margin-bottom:4px}
+.mc{background:#1F2937;border:1px solid #374151;border-left:3px solid #22C55E;border-radius:5px;padding:7px 8px;cursor:pointer;transition:background .15s}
+.mc.warn{border-left-color:#F59E0B}
+.mc.crit{border-left-color:#EF4444}
+.mc.reuse{border-left-color:#38BDF8}
+.mc:hover{background:#263244}
+.mc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.mc-name{font-size:11px;font-weight:500;color:#E2E8F0}
+.mc-bdg{font-size:8px;padding:1px 5px;border-radius:2px;font-weight:500}
+.ok-b{background:#064E3B;color:#34D399}.warn-b{background:#451A03;color:#FBB040}.crit-b{background:#450A0A;color:#F87171;animation:pd .7s infinite}.reuse-b{background:#0C2240;color:#60A5FA}
+.bar2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.bl{font-size:8px;color:#6B7280}.bv{font-size:10px;font-weight:500;color:#CBD5E1}
+.bt{height:3px;background:#374151;border-radius:2px;overflow:hidden;margin-top:2px}.bf{height:100%;border-radius:2px;transition:width .4s}
+.canvas-area{position:relative;overflow:hidden;background:#1E2433}
+.fcanvas{width:100%;height:100%;display:block}
+.tip{position:absolute;background:#0D1117;color:#E2E8F0;border:1px solid #2D4A6A;border-radius:6px;padding:9px 11px;pointer-events:none;display:none;z-index:50;min-width:180px;font-size:10px}
+.tip-title{font-size:12px;font-weight:500;color:#fff;margin-bottom:6px}
+.tip-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:3px}
+.tip-lbl{color:#6B7280}.tip-val{font-weight:500}
+.alert-item{padding:5px 8px;border-radius:4px;font-size:10px;margin-bottom:3px;border-left:2px solid}
+.a-ok{background:#0A1F14;border-left-color:#22C55E;color:#6EE7B7}
+.a-warn{background:#1F1507;border-left-color:#F59E0B;color:#FBB040}
+.a-crit{background:#1F0A0A;border-left-color:#EF4444;color:#FCA5A5}
+.a-info{background:#0A1929;border-left-color:#38BDF8;color:#7DD3FC}
+.ai-box{background:#0F1D2D;border:1px solid #1E3A5F;border-radius:5px;padding:8px;margin-bottom:5px;font-size:10px}
+.ai-tag{display:inline-block;background:#312E81;color:#A5B4FC;font-size:8px;padding:1px 6px;border-radius:2px;margin-bottom:5px}
+.ai-txt{color:#CBD5E1;line-height:1.5;margin-bottom:5px}
+.shap-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.shap-l{font-size:8px;color:#6B7280;width:72px;flex-shrink:0}
+.shap-t{flex:1;height:5px;background:#1F2937;border-radius:3px;overflow:hidden}
+.shap-f{height:100%;border-radius:3px}
+.shap-v{font-size:8px;color:#9CA3AF;width:24px;text-align:right}
+.sav-box{background:#0A1F14;border:1px solid #14532D;border-radius:5px;padding:9px;text-align:center}
+.sav-val{font-size:17px;font-weight:500;color:#34D399}
+.sav-lbl{font-size:8px;color:#6B7280;letter-spacing:.5px}
+.footer{background:#111827;border-top:1px solid #1F2937;padding:9px 14px;display:grid;grid-template-columns:1fr 1fr 185px;gap:10px;height:120px}
+.cht-lbl{font-size:9px;font-weight:500;letter-spacing:1px;color:#6B7280;text-transform:uppercase;margin-bottom:4px}
+.ctl-lbl{font-size:9px;color:#9CA3AF}
+.ctl-sel{width:100%;background:#1F2937;color:#E2E8F0;border:1px solid #374151;border-radius:3px;padding:3px 5px;font-size:10px}
+.cw-btn{background:#0F2840;color:#38BDF8;border:1px solid #1E4060;border-radius:3px;padding:3px 10px;font-size:10px;cursor:pointer;transition:background .15s;width:100%}
+.cw-btn:hover{background:#1A3A5C}
+.cw-btn.primary{background:#1E4060;color:#93C5FD}
+input[type=range]{width:100%;accent-color:#38BDF8}
+</style>
+
+<div class="root">
+<div class="header">
+  <div class="logo">
+    <div class="pulse-dot"></div>
+    Project <span style="color:#38BDF8">Chrono</span>-Watt
+    <span style="font-size:10px;color:#4B5563">Factory Intelligence</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="hbadge" id="sbadge">SIM x1</span>
+    <button class="cw-btn" onclick="toggleSim()" id="sbtn" style="width:auto;padding:3px 10px">Pause</button>
+    <button class="cw-btn" onclick="stepOnce()" style="width:auto;padding:3px 8px">Step</button>
+    <button class="cw-btn primary" onclick="doExport()" style="width:auto;padding:3px 10px">Export</button>
+    <span class="score-chip" id="scorechip">0 pts</span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar" id="mlist"><div class="panel-lbl">Machines</div></div>
+  <div class="canvas-area"><canvas id="fc" class="fcanvas"></canvas><div class="tip" id="tip"></div></div>
+  <div class="sidebar">
+    <div class="panel-lbl">Carbon alerts</div>
+    <div id="alist"></div>
+    <div class="panel-lbl" style="margin-top:6px">AI suggestions</div>
+    <div id="ailist"></div>
+    <div class="panel-lbl" style="margin-top:6px">Savings</div>
+    <div class="sav-box">
+      <div class="sav-val" id="sval">0.0 kWh</div>
+      <div class="sav-lbl">ENERGY REUSED</div>
+      <div style="margin-top:6px"><div class="sav-val" style="font-size:14px;color:#60A5FA" id="cval">0.00 kg</div><div class="sav-lbl">CO2 AVOIDED</div></div>
+    </div>
+    <div style="margin-top:5px">
+      <div id="score-lbl" style="font-size:10px;color:#9CA3AF">Reuse energy to earn points</div>
+      <div style="height:4px;background:#1F2937;border-radius:2px;overflow:hidden;margin-top:4px"><div id="sbar" style="height:100%;width:0%;background:linear-gradient(90deg,#F59E0B,#10B981);border-radius:2px;transition:width .5s"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div><div class="cht-lbl">Energy (kW)</div><div style="position:relative;height:82px"><canvas id="ce"></canvas></div></div>
+  <div><div class="cht-lbl">Carbon %</div><div style="position:relative;height:82px"><canvas id="cc"></canvas></div></div>
+  <div style="display:flex;flex-direction:column;gap:5px;padding-left:10px;border-left:1px solid #1F2937">
+    <div class="ctl-lbl">Carbon limit: <span id="llbl" style="color:#38BDF8">60 kg/h</span></div>
+    <input type="range" min="20" max="100" value="60" step="5" id="lslider" oninput="setLimit(this.value)">
+    <div class="ctl-lbl">Speed</div>
+    <select class="ctl-sel" id="sspeed" onchange="setSpeed(this.value)">
+      <option value="1">Normal x1</option><option value="2">Fast x2</option>
+      <option value="5">Turbo x5</option><option value="0.25">Slow x0.25</option>
+    </select>
+    <div class="ctl-lbl">Scenario</div>
+    <select class="ctl-sel" id="sscen">
+      <option value="normal">Normal</option><option value="peak">Peak surge</option>
+      <option value="maxreuse">Max reuse</option><option value="failure">Machine failure</option>
+    </select>
+    <button class="cw-btn primary" onclick="applyScen()" style="margin-top:2px">Apply</button>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const MDATA=[
+  {id:0,name:'Conveyor A', x:.06,y:.08,w:.19,h:.17,et:'electric',base:45, cb:.5},
+  {id:1,name:'Heater B',   x:.32,y:.06,w:.17,h:.18,et:'heat',    base:120,cb:1.4},
+  {id:2,name:'Motor C',    x:.57,y:.08,w:.16,h:.16,et:'vibration',base:78, cb:.8},
+  {id:3,name:'Compressor', x:.77,y:.06,w:.18,h:.18,et:'electric',base:95, cb:1.0},
+  {id:4,name:'Furnace E',  x:.06,y:.60,w:.18,h:.22,et:'heat',    base:180,cb:2.1},
+  {id:5,name:'Press F',    x:.31,y:.62,w:.17,h:.20,et:'vibration',base:65, cb:.7},
+  {id:6,name:'Pump G',     x:.55,y:.60,w:.16,h:.20,et:'electric',base:55, cb:.6},
+  {id:7,name:'Robot H',    x:.76,y:.60,w:.18,h:.22,et:'electric',base:88, cb:.9},
+];
+const PATHS=[
+  {from:1,to:4,type:'heat',label:'Heat pipe',eff:.75},
+  {from:2,to:6,type:'vibration',label:'Vibe tap',eff:.55},
+  {from:3,to:0,type:'electric',label:'Power share',eff:.90},
+  {from:4,to:5,type:'heat',label:'Thermal reuse',eff:.65},
+  {from:7,to:6,type:'electric',label:'Load balance',eff:.80},
+];
+const EC={heat:'#F97316',vibration:'#EAB308',electric:'#38BDF8'};
+const EG={heat:'rgba(249,115,22,.18)',vibration:'rgba(234,179,8,.18)',electric:'rgba(56,189,248,.18)'};
+
+let lim=60,speed=1,running=true,T=0,tick=0;
+let score=0,saved=0,co2av=0,scen='normal';
+let parts=[],smk=[];
+
+let S=MDATA.map(m=>({...m,e:m.base,co2pct:0,status:'ok',reuse:false,anom:false,pred:m.base*1.05,hist:Array(40).fill(m.base)}));
+let eH=Array(40).fill(600),cH=Array(40).fill(40);
+
+const canvas=document.getElementById('fc');
+const ctx=canvas.getContext('2d');
+function resize(){canvas.width=canvas.parentElement.clientWidth;canvas.height=canvas.parentElement.clientHeight}
+resize();window.addEventListener('resize',resize);
+
+let CE,CC;
+function initCharts(){
+  CE=new Chart(document.getElementById('ce'),{type:'line',data:{labels:Array(40).fill(''),datasets:[{data:eH.slice(),borderColor:'#38BDF8',borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:'rgba(56,189,248,.07)',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{color:'#6B7280',font:{size:8},maxTicksLimit:3},grid:{color:'rgba(107,114,128,.15)'},border:{display:false}}},animation:{duration:0}}});
+  CC=new Chart(document.getElementById('cc'),{type:'line',data:{labels:Array(40).fill(''),datasets:[{data:cH.slice(),borderColor:'#EF4444',borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:'rgba(239,68,68,.07)',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{color:'#6B7280',font:{size:8},maxTicksLimit:3,callback:v=>v+'%'},grid:{color:'rgba(107,114,128,.15)'},border:{display:false}}},animation:{duration:0}}});
+}
+
+function getMod(){
+  if(scen==='peak')return{surge:1.45};
+  if(scen==='maxreuse')return{surge:1.1,mr:true};
+  if(scen==='failure')return{surge:1.2,fail:4};
+  return{surge:1};
+}
+
+function simStep(){
+  const mod=getMod();
+  S.forEach((m,i)=>{
+    const b=MDATA[i].base;
+    const n=Math.sin(T*.05+i*1.3)*.12+Math.sin(T*.11+i*2.1)*.06;
+    const fail=(mod.fail===i)?.15:1;
+    m.e=b*mod.surge*fail*(1+n);
+    m.pred=m.e*(1.07+Math.sin(T*.03+i)*.04);
+    m.co2pct=Math.min(MDATA[i].cb*m.e/b*mod.surge/lim*100,160);
+    m.anom=Math.abs(n)>.13||(mod.fail===i);
+    m.status=mod.fail===i?'crit':m.co2pct>90?'crit':m.co2pct>65?'warn':'ok';
+    m.reuse=false;
+    if(mod.mr||m.co2pct>68){
+      const p=PATHS.find(p=>p.from===i);
+      if(p){m.reuse=true;const sv=m.e*.15*p.eff;saved+=sv*8e-5*speed;co2av+=sv*8e-5*.233*speed;if(Math.random()<.003*speed)awardPts(5,m);}
+    }
+    m.hist.push(Math.round(m.e));if(m.hist.length>40)m.hist.shift();
+  });
+  const tot=S.reduce((s,m)=>s+m.e,0);
+  const cavg=S.reduce((s,m)=>s+m.co2pct,0)/S.length;
+  eH.push(Math.round(tot));if(eH.length>40)eH.shift();
+  cH.push(Math.round(cavg));if(cH.length>40)cH.shift();
+  updParts();
+  T+=speed;tick++;
+}
+
+function updParts(){
+  if(tick%Math.max(1,Math.floor(5/speed))===0){
+    PATHS.forEach(p=>{
+      if(!S[p.from].reuse)return;
+      const W=canvas.width,H=canvas.height;
+      const fm=S[p.from],to=S[p.to];
+      parts.push({fx:(fm.x+fm.w/2)*W,fy:(fm.y+fm.h/2)*H,tx:(to.x+to.w/2)*W,ty:(to.y+to.h/2)*H,t:0,type:p.type,sp:.018*speed,sz:3.5+Math.random()*2});
+    });
+  }
+  parts=parts.filter(p=>{p.t+=p.sp;return p.t<1;});
+  if(tick%3===0){
+    S.forEach(m=>{
+      if(m.co2pct>50){
+        const W=canvas.width,H=canvas.height;
+        const n=m.co2pct>80?2:1;
+        for(let i=0;i<n;i++) smk.push({x:(m.x+m.w/2)*W,y:m.y*H-2,vx:(Math.random()-.5)*.35,vy:-.55-Math.random()*.35,life:0,max:55+Math.random()*35,sz:4+Math.random()*6,a:m.co2pct/260});
+      }
+    });
+  }
+  smk=smk.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life++;return p.life<p.max;});
+}
+
+function drawMachine(m,W,H){
+  const x=m.x*W,y=m.y*H,w=m.w*W,h=m.h*H;
+  const cx=x+w/2,cy=y+h/2;
+  const isActive=m.reuse,isWarn=m.status==='warn',isCrit=m.status==='crit';
+  const pulseF=.5+.5*Math.sin(T*.12);
+
+  if(isCrit){
+    ctx.fillStyle=`rgba(239,68,68,${.07+.06*pulseF})`;
+    ctx.beginPath();ctx.roundRect(x-4,y-4,w+8,h+8,10);ctx.fill();
+  }
+  if(isActive){
+    ctx.fillStyle=`rgba(56,189,248,${.06+.05*pulseF})`;
+    ctx.beginPath();ctx.roundRect(x-3,y-3,w+6,h+6,9);ctx.fill();
+  }
+
+  const baseC=isCrit?'#2D1515':isWarn?'#2D1F0A':isActive?'#0A1F2D':'#1C2333';
+  const topC =isCrit?'#3D2020':isWarn?'#3D2B0F':isActive?'#0F2840':'#242E44';
+  ctx.fillStyle=topC;
+  ctx.beginPath();ctx.roundRect(x,y,w,h,7);ctx.fill();
+  ctx.fillStyle=baseC;
+  ctx.beginPath();ctx.roundRect(x,y+h*.55,w,h*.45,{lowerLeft:7,lowerRight:7,upperLeft:0,upperRight:0});ctx.fill();
+
+  const bc=isCrit?(tick%30<15?'#EF4444':'#F87171'):isWarn?'#F59E0B':isActive?'#38BDF8':'#374151';
+  ctx.strokeStyle=bc;ctx.lineWidth=isCrit||isActive?1.5:1;
+  ctx.beginPath();ctx.roundRect(x,y,w,h,7);ctx.stroke();
+
+  const mc=EC[m.et];
+  drawMachineArt(m.id%4,ctx,x,y,w,h,mc,m,T);
+
+  const bx=x+w*.1,by=y+h*.78,bw=w*.8,bh=3.5;
+  ctx.fillStyle='#0F172A';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,2);ctx.fill();
+  const pct=Math.min(m.e/(MDATA[m.id].base*1.6),1);
+  ctx.fillStyle=mc;ctx.beginPath();ctx.roundRect(bx,by,bw*pct,bh,2);ctx.fill();
+
+  ctx.font='bold 8px monospace';ctx.textAlign='left';ctx.fillStyle='#9CA3AF';
+  ctx.fillText(Math.round(m.e)+'kW',x+3,y+h-3);
+  const cc2=m.co2pct>90?'#F87171':m.co2pct>65?'#FBB040':'#34D399';
+  ctx.fillStyle=cc2;ctx.textAlign='right';
+  ctx.fillText(Math.round(m.co2pct)+'%',x+w-3,y+h-3);
+
+  ctx.beginPath();ctx.arc(x+w-7,y+7,4,0,Math.PI*2);
+  ctx.fillStyle=isCrit?'#EF4444':isWarn?'#F59E0B':isActive?'#38BDF8':'#22C55E';
+  ctx.fill();
+  if(isCrit||isActive){ctx.strokeStyle=isCrit?'rgba(239,68,68,.4)':'rgba(56,189,248,.4)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x+w-7,y+7,5+3*pulseF,0,Math.PI*2);ctx.stroke();}
+}
+
+function drawMachineArt(type,ctx,x,y,w,h,mc,m,T){
+  const cx=x+w/2,cy=y+h/2;
+  const pulse=.5+.5*Math.sin(T*.1+m.id);
+  ctx.save();
+  if(type===0){
+    for(let i=0;i<3;i++){
+      const bx=x+w*.1+i*(w*.28),by=cy-h*.12;
+      ctx.fillStyle=i===1?mc:'#2D3748';ctx.beginPath();ctx.roundRect(bx,by,w*.24,h*.22,3);ctx.fill();
+      ctx.strokeStyle='#4B5563';ctx.lineWidth=.5;ctx.stroke();
+    }
+    ctx.fillStyle=mc;ctx.beginPath();ctx.roundRect(x+w*.1,cy+h*.05,w*.8,h*.1,2);ctx.fill();
+    ctx.fillStyle='#374151';ctx.beginPath();ctx.roundRect(x+w*.1,cy+h*.18,w*.8,h*.07,2);ctx.fill();
+  }
+  if(type===1){
+    ctx.fillStyle='#374151';ctx.beginPath();ctx.roundRect(cx-w*.25,cy-h*.22,w*.5,h*.42,4);ctx.fill();
+    ctx.fillStyle=mc+'33';ctx.beginPath();ctx.roundRect(cx-w*.2,cy-h*.18,w*.4,h*.34,3);ctx.fill();
+    ctx.strokeStyle=mc;ctx.lineWidth=1;ctx.stroke();
+    for(let i=0;i<4;i++){
+      const angle=(i/4)*Math.PI*2+T*.04;
+      const r=Math.min(w,h)*.1;
+      const px=cx+Math.cos(angle)*r,py=cy-h*.05+Math.sin(angle)*r*.4;
+      ctx.fillStyle=mc;ctx.globalAlpha=.6+.4*Math.sin(T*.08+i);
+      ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    const gs=h*.05,gp=cx-w*.15;
+    for(let i=0;i<4;i++){ctx.fillStyle=i%2===0?mc:'#374151';ctx.beginPath();ctx.roundRect(gp+i*w*.07,cy+h*.12,w*.06,gs,1);ctx.fill();}
+  }
+  if(type===2){
+    ctx.fillStyle='#374151';ctx.beginPath();ctx.arc(cx,cy-h*.06,Math.min(w,h)*.25,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#4B5563';ctx.lineWidth=.5;ctx.stroke();
+    for(let i=0;i<6;i++){
+      const angle=(i/6)*Math.PI*2+T*.06;
+      const r=Math.min(w,h)*.18;
+      ctx.fillStyle=mc;ctx.globalAlpha=.7+.3*Math.sin(T*.1+i);
+      ctx.beginPath();ctx.arc(cx+Math.cos(angle)*r,cy-h*.06+Math.sin(angle)*r,2.5,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#2D3748';ctx.beginPath();ctx.roundRect(cx-w*.08,cy-h*.06-2,w*.16,h*.02,2);ctx.fill();
+    ctx.strokeStyle=mc;ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy-h*.06,Math.min(w,h)*.12,0,Math.PI*2);ctx.stroke();
+  }
+  if(type===3){
+    for(let i=0;i<3;i++){
+      const px=x+w*.12+i*w*.27,py=cy-h*.2;
+      ctx.fillStyle='#2D3748';ctx.beginPath();ctx.roundRect(px,py,w*.2,h*.32,3);ctx.fill();
+      ctx.strokeStyle='#4B5563';ctx.lineWidth=.5;ctx.stroke();
+      ctx.fillStyle=mc+'66';ctx.beginPath();ctx.roundRect(px+2,py+2,w*.16,h*.28,2);ctx.fill();
+      ctx.fillStyle=mc;ctx.globalAlpha=.5+.5*Math.sin(T*.08+i*1.5);
+      ctx.beginPath();ctx.arc(px+w*.1,py+h*.12,2.5,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    ctx.fillStyle='#374151';ctx.beginPath();ctx.roundRect(x+w*.08,cy+h*.12,w*.84,h*.06,2);ctx.fill();
+    ctx.fillStyle=mc;ctx.beginPath();ctx.roundRect(x+w*.08,cy+h*.12,w*.84*Math.min(m.e/(MDATA[m.id].base*1.2),1),h*.06,2);ctx.fill();
+  }
+  ctx.restore();
+  ctx.font='bold 9px sans-serif';ctx.fillStyle='#CBD5E1';ctx.textAlign='center';
+  ctx.fillText(m.name.length>10?m.name.slice(0,9)+'…':m.name,cx,y+h*.68);
+}
+
+function drawScene(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#161C27';ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  ctx.fillStyle='rgba(255,255,255,.015)';
+  for(let i=0;i<3;i++) ctx.fillRect(0,H*.36+i*.5,W,1);
+
+  PATHS.forEach(p=>{
+    const f=S[p.from],t=S[p.to];
+    const fx=(f.x+f.w/2)*W,fy=(f.y+f.h/2)*H,tx=(t.x+t.w/2)*W,ty=(t.y+t.h/2)*H;
+    const mx=(fx+tx)/2,my=(fy+ty)/2-22;
+    ctx.beginPath();ctx.moveTo(fx,fy);ctx.quadraticCurveTo(mx,my,tx,ty);
+    ctx.strokeStyle=f.reuse?EC[p.type]:'rgba(55,65,81,.6)';
+    ctx.lineWidth=f.reuse?1.5:.8;ctx.setLineDash(f.reuse?[]:[4,4]);ctx.stroke();ctx.setLineDash([]);
+    if(f.reuse){ctx.font='bold 7px monospace';ctx.fillStyle=EC[p.type];ctx.textAlign='center';ctx.fillText(p.label.toUpperCase(),mx,my-5);}
+  });
+
+  smk.forEach(p=>{
+    const a=p.a*(1-p.life/p.max);
+    ctx.beginPath();ctx.arc(p.x,p.y,p.sz*(.4+p.life/p.max),0,Math.PI*2);
+    ctx.fillStyle=`rgba(156,163,175,${a})`;ctx.fill();
+  });
+
+  parts.forEach(p=>{
+    const px=p.fx+(p.tx-p.fx)*p.t,py=p.fy+(p.ty-p.fy)*p.t;
+    ctx.beginPath();ctx.arc(px,py,p.sz,0,Math.PI*2);ctx.fillStyle=EC[p.type];ctx.fill();
+    for(let i=1;i<=3;i++){
+      const tt=Math.max(0,p.t-i*.025);
+      const tx2=p.fx+(p.tx-p.fx)*tt,ty2=p.fy+(p.ty-p.fy)*tt;
+      ctx.beginPath();ctx.arc(tx2,ty2,p.sz*(1-i*.27),0,Math.PI*2);
+      const rgb=EC[p.type].startsWith('#38')?'56,189,248':EC[p.type].startsWith('#F9')?'249,115,22':'234,179,8';
+      ctx.fillStyle=`rgba(${rgb},${Math.max(0,.3-i*.08)})`;ctx.fill();
+    }
+  });
+
+  S.forEach(m=>drawMachine(m,W,H));
+  ctx.textAlign='left';
+}
+
+function updateUI(){
+  const ml=document.getElementById('mlist');
+  ml.innerHTML='<div class="panel-lbl">Machines</div>';
+  S.forEach((m,i)=>{
+    const cls=m.reuse?'reuse':m.status;
+    const bc=m.reuse?'reuse-b':m.status==='crit'?'crit-b':m.status==='warn'?'warn-b':'ok-b';
+    const bt=m.reuse?'REUSE':m.status==='crit'?'CRIT':m.status==='warn'?'WARN':'OK';
+    const ep=Math.min(m.e/(MDATA[i].base*1.6)*100,100);
+    const cp=Math.min(m.co2pct,100);
+    const cc2=cp>90?'#F87171':cp>65?'#FBB040':'#34D399';
+    ml.innerHTML+=`<div class="mc ${cls}" onclick="showDet(${i})">
+      <div class="mc-head"><span class="mc-name">${m.name}</span><span class="mc-bdg ${bc}">${bt}</span></div>
+      <div class="bar2">
+        <div><div class="bl">Energy</div><div class="bv">${Math.round(m.e)}kW</div><div class="bt"><div class="bf" style="width:${ep}%;background:${EC[m.et]}"></div></div></div>
+        <div><div class="bl">CO2</div><div class="bv" style="color:${cc2}">${Math.round(cp)}%</div><div class="bt"><div class="bf" style="width:${cp}%;background:${cc2}"></div></div></div>
+      </div></div>`;
+  });
+
+  const al=document.getElementById('alist');al.innerHTML='';
+  const crits=S.filter(m=>m.status==='crit'),warns=S.filter(m=>m.status==='warn'),reu=S.filter(m=>m.reuse);
+  if(!crits.length&&!warns.length&&!reu.length)al.innerHTML='<div class="alert-item a-ok">All systems normal</div>';
+  crits.forEach(m=>{al.innerHTML+=`<div class="alert-item a-crit">CRIT: ${m.name} CO2 ${Math.round(m.co2pct)}%</div>`;});
+  warns.forEach(m=>{al.innerHTML+=`<div class="alert-item a-warn">WARN: ${m.name} CO2 ${Math.round(m.co2pct)}%</div>`;});
+  reu.slice(0,2).forEach(m=>{const p=PATHS.find(pp=>pp.from===m.id);if(p)al.innerHTML+=`<div class="alert-item a-info">Reusing: ${m.name} to ${MDATA[p.to].name}</div>`;});
+
+  const ai=document.getElementById('ailist');ai.innerHTML='';
+  genAI().forEach(s=>{
+    ai.innerHTML+=`<div class="ai-box"><div class="ai-tag">AI MODEL</div><div class="ai-txt">${s.t}</div>${s.sh.map(f=>`<div class="shap-row"><div class="shap-l">${f.l}</div><div class="shap-t"><div class="shap-f" style="width:${f.v}%;background:${f.v>70?'#60A5FA':f.v>45?'#A78BFA':'#34D399'}"></div></div><div class="shap-v">${f.v}%</div></div>`).join('')}</div>`;
+  });
+
+  document.getElementById('sval').textContent=saved.toFixed(1)+' kWh';
+  document.getElementById('cval').textContent=co2av.toFixed(2)+' kg';
+  document.getElementById('scorechip').textContent=score+' pts';
+  document.getElementById('sbar').style.width=Math.min(score/500*100,100)+'%';
+  const lv=score>400?'Energy Master':score>200?'Eco Champion':score>50?'Green Engineer':'Reuse energy to earn pts';
+  document.getElementById('score-lbl').textContent=lv;
+  CE.data.datasets[0].data=eH.slice();CE.update('none');
+  CC.data.datasets[0].data=cH.slice();CC.update('none');
+}
+
+function genAI(){
+  const hot=S.reduce((a,b)=>a.co2pct>b.co2pct?a:b);
+  const rp=PATHS.find(p=>S[p.from].co2pct>58);
+  const out=[];
+  if(rp)out.push({t:`Redirect ${rp.type} from ${MDATA[rp.from].name} to ${MDATA[rp.to].name}. Save ~${Math.round(S[rp.from].e*.15)}kW (${Math.round(rp.eff*100)}% eff).`,sh:[{l:'CO2 excess',v:Math.round(S[rp.from].co2pct)},{l:'Path eff.',v:Math.round(rp.eff*100)},{l:'Demand delta',v:Math.round(35+Math.random()*20)},{l:'Time factor',v:Math.round(40+Math.random()*25)}]});
+  if(hot.co2pct>72)out.push({t:`${hot.name} forecast to breach limit in ~${Math.round(4+Math.random()*8)} min. Throttle 18%.`,sh:[{l:'Trend slope',v:82},{l:'Current %',v:Math.round(hot.co2pct)},{l:'Historical',v:58},{l:'Ambient',v:34}]});
+  if(!out.length)out.push({t:`Motor C vibration can supply ~12kW to Pump G. Enable storage for off-peak use.`,sh:[{l:'Vib. level',v:71},{l:'Pump demand',v:54},{l:'Storage cap',v:80},{l:'ROI score',v:92}]});
+  return out.slice(0,2);
+}
+
+function awardPts(n,m){
+  score+=n;
+  const r=canvas.getBoundingClientRect();
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;font-size:13px;font-weight:500;color:#22D3EE;pointer-events:none;z-index:9999;animation:popf 1.3s forwards`;
+  el.textContent='+'+n+' pts';
+  el.style.left=Math.round(r.left+(m.x+m.w/2)*canvas.width)+'px';
+  el.style.top=Math.round(r.top+m.y*canvas.height)+'px';
+  const st=document.createElement('style');st.textContent='@keyframes popf{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}';
+  document.head.appendChild(st);document.body.appendChild(el);
+  setTimeout(()=>{el.remove();st.remove();},1400);
+}
+
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/canvas.width,my=(e.clientY-r.top)/canvas.height;
+  const hit=S.find(m=>mx>=m.x&&mx<=m.x+m.w&&my>=m.y&&my<=m.y+m.h);
+  const tt=document.getElementById('tip');
+  if(hit){
+    canvas.style.cursor='pointer';
+    const p=PATHS.find(pp=>pp.from===hit.id);
+    const cc2=hit.co2pct>90?'#F87171':hit.co2pct>65?'#FBB040':'#34D399';
+    tt.style.display='block';
+    tt.style.left=Math.min(e.offsetX+14,canvas.width-200)+'px';
+    tt.style.top=Math.min(e.offsetY-6,canvas.height-160)+'px';
+    tt.innerHTML=`<div class="tip-title">${hit.name}</div>
+      <div class="tip-row"><span class="tip-lbl">Energy now</span><span class="tip-val" style="color:${EC[hit.et]}">${Math.round(hit.e)} kW</span></div>
+      <div class="tip-row"><span class="tip-lbl">Predicted</span><span class="tip-val">${Math.round(hit.pred)} kW</span></div>
+      <div class="tip-row"><span class="tip-lbl">CO2 %</span><span class="tip-val" style="color:${cc2}">${Math.round(hit.co2pct)}%</span></div>
+      ${hit.anom?'<div style="color:#FBB040;margin-top:4px;font-size:9px">Anomaly detected</div>':''}
+      ${p?`<div style="color:#38BDF8;margin-top:4px;font-size:9px">Reuse: ${p.label} to ${MDATA[p.to].name}</div>`:''}
+      <div style="color:#4B5563;font-size:8px;margin-top:5px">Click for details</div>`;
+  } else {
+    canvas.style.cursor='default';tt.style.display='none';
+  }
+});
+canvas.addEventListener('mouseleave',()=>{document.getElementById('tip').style.display='none';});
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/canvas.width,my=(e.clientY-r.top)/canvas.height;
+  const hit=S.find(m=>mx>=m.x&&mx<=m.x+m.w&&my>=m.y&&my<=m.y+m.h);
+  if(hit)showDet(hit.id);
+});
+
+function showDet(i){
+  const m=S[i],p=PATHS.find(pp=>pp.from===m.id),rp=PATHS.find(pp=>pp.to===m.id);
+  alert(`${m.name}\n\nEnergy: ${Math.round(m.e)} kW (predicted: ${Math.round(m.pred)} kW)\nCO2: ${Math.round(m.co2pct)}% of limit (${lim} kg/h)\nStatus: ${m.status}\nAnomaly: ${m.anom?'YES':'No'}\n\n${p?`Reuse out: ${p.label} to ${MDATA[p.to].name} (${Math.round(p.eff*100)}% eff, saves ~${Math.round(m.e*.15*p.eff)} kW)`:'No outgoing reuse'}\n${rp?`Receives from: ${MDATA[rp.from].name}`:'No incoming reuse'}`);
+}
+
+function toggleSim(){running=!running;document.getElementById('sbtn').textContent=running?'Pause':'Resume';}
+function stepOnce(){running=false;document.getElementById('sbtn').textContent='Resume';simStep();updateUI();}
+function setLimit(v){lim=+v;document.getElementById('llbl').textContent=v+' kg/h';}
+function setSpeed(v){speed=+v;document.getElementById('sbadge').textContent='SIM x'+v;}
+function applyScen(){scen=document.getElementById('sscen').value;}
+function doExport(){const d={timestamp:new Date().toISOString(),scen,lim,saved:+saved.toFixed(2),co2av:+co2av.toFixed(3),score,machines:S.map(m=>({name:m.name,energy:Math.round(m.e),co2pct:Math.round(m.co2pct),status:m.status,reuse:m.reuse}))};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='chrono-watt.json';a.click();}
+
+let lastUI=0;
+function loop(ts){
+  if(running){simStep();drawScene();if(ts-lastUI>350){updateUI();lastUI=ts;}}
+  requestAnimationFrame(loop);
+}
+initCharts();updateUI();requestAnimationFrame(loop);
+</script>
