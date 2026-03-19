@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Chrono-Watt — Sky Edition</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+--bg: #e8f4fd;--sky: #0ea5e9;--sky-deep: #0369a1;--sky-light:#bae6fd;
+--amber: #f59e0b;--red: #ef4444;--teal: #0d9488;--purple: #7c3aed;
+--text: #0c3a5b;--text2: #3b7dad;--text3: #7fb8d8;
+--card: rgba(255,255,255,0.82);--border: rgba(14,165,233,0.22);
+--border2: rgba(14,165,233,0.42);--shadow: 0 4px 24px rgba(14,165,233,0.13);
+--glow-sky: 0 0 24px rgba(14,165,233,0.4);--glow-r: 0 0 20px rgba(239,68,68,0.3);
+--glow-a: 0 0 20px rgba(245,158,11,0.3);--fd: 'Syne', sans-serif;
+--fm: 'IBM Plex Mono', monospace;--fc: 'Space Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fm);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+background:radial-gradient(ellipse 80% 50% at 15% -5%, rgba(14,165,233,0.18) 0%, transparent 60%),
+radial-gradient(ellipse 60% 40% at 85% 105%, rgba(56,189,248,0.13) 0%, transparent 60%),
+linear-gradient(180deg,#ddf0fc 0%,#f0f9ff 50%,#e8f4fd 100%);
+animation:skyshift 14s ease-in-out infinite alternate;}
+@keyframes skyshift{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(8deg)}}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+background-image:linear-gradient(rgba(14,165,233,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.05) 1px,transparent 1px);
+background-size:48px 48px;}
+.cloud{position:fixed;border-radius:50px;background:rgba(255,255,255,0.5);filter:blur(18px);pointer-events:none;z-index:0;animation:cdrift linear infinite;}
+@keyframes cdrift{from{transform:translateX(-300px)}to{transform:translateX(calc(100vw + 300px))}}
+
+/* ── DANGER ALERT BANNER ── */
+#danger-banner{
+  display:none;position:fixed;top:108px;left:0;right:0;z-index:200;
+  background:linear-gradient(90deg,#7f1d1d,#991b1b,#7f1d1d);
+  border-top:2px solid #f87171;border-bottom:2px solid #f87171;
+  padding:10px 28px;animation:dangerPulse 1.2s ease-in-out infinite;
+  box-shadow:0 0 32px rgba(239,68,68,0.5);
+}
+@keyframes dangerPulse{0%,100%{box-shadow:0 0 32px rgba(239,68,68,0.5)}50%{box-shadow:0 0 60px rgba(239,68,68,0.9)}}
+#danger-banner .db-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+#danger-banner .db-icon{font-size:22px;animation:shake .4s ease-in-out infinite alternate;}
+@keyframes shake{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+#danger-banner .db-text{font-family:var(--fc);font-size:13px;color:#fecaca;font-weight:700;letter-spacing:.5px;flex:1;}
+#danger-banner .db-sub{font-size:11px;color:#fca5a5;margin-top:2px;}
+#danger-banner .db-score{font-family:var(--fd);font-size:26px;font-weight:800;color:#fca5a5;white-space:nowrap;}
+#danger-banner .db-close{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fecaca;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:11px;font-family:var(--fc);}
+#danger-banner .db-close:hover{background:rgba(255,255,255,0.25);}
+
+/* ── PREDICTION PANEL ── */
+#pred-panel{display:none;position:fixed;bottom:34px;right:16px;z-index:150;
+  width:300px;background:rgba(3,30,60,0.97);border:1.5px solid var(--sky);
+  border-radius:16px;box-shadow:0 8px 32px rgba(14,165,233,0.35);overflow:hidden;}
+#pred-panel .pp-head{background:rgba(14,165,233,0.15);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(14,165,233,0.2);}
+#pred-panel .pp-title{font-family:var(--fc);font-size:11px;letter-spacing:2px;color:#bae6fd;}
+#pred-panel .pp-close{background:none;border:none;color:#7dd3fc;cursor:pointer;font-size:14px;}
+#pred-panel .pp-body{padding:12px 14px;display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto;}
+.pred-row{border-radius:10px;padding:9px 11px;border:1.5px solid;}
+.pred-row.pr-critical{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.4);}
+.pred-row.pr-warning{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);}
+.pred-row.pr-watch{background:rgba(234,179,8,0.07);border-color:rgba(234,179,8,0.25);}
+.pred-row.pr-safe{background:rgba(14,165,233,0.08);border-color:rgba(14,165,233,0.2);}
+.pr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.pr-name{font-size:12px;font-weight:700;color:#e0f2fe;}
+.pr-score{font-family:var(--fd);font-size:18px;font-weight:800;}
+.pr-score.sc-critical{color:#f87171;} .pr-score.sc-warning{color:#fbbf24;}
+.pr-score.sc-watch{color:#fde047;} .pr-score.sc-safe{color:#7dd3fc;}
+.pr-alert{font-size:10px;line-height:1.4;color:#94a3b8;}
+.pr-bar-wrap{margin-top:6px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.pr-bar{height:100%;border-radius:2px;transition:width .6s ease;}
+.pr-bar.bc{background:#f87171;} .pr-bar.bw{background:#fbbf24;}
+.pr-bar.bwa{background:#fde047;} .pr-bar.bs{background:#7dd3fc;}
+#pred-toggle{position:fixed;bottom:34px;right:16px;z-index:151;
+  background:linear-gradient(135deg,var(--sky),var(--sky-deep));color:#fff;
+  border:none;border-radius:40px;padding:9px 18px;font-family:var(--fc);
+  font-size:11px;letter-spacing:1px;cursor:pointer;box-shadow:var(--glow-sky);
+  transition:all .2s;}
+#pred-toggle:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(14,165,233,0.6);}
+#pred-toggle.has-critical{background:linear-gradient(135deg,#dc2626,#991b1b);box-shadow:var(--glow-r);animation:btnPulse 1.4s ease-in-out infinite;}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 16px rgba(239,68,68,0.5)}50%{box-shadow:0 0 36px rgba(239,68,68,0.9)}}
+
+#upload-bar{position:fixed;top:54px;left:0;right:0;z-index:99;
+background:rgba(3,105,161,0.97);border-bottom:2px solid var(--sky);
+backdrop-filter:blur(16px);padding:10px 28px;
+display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+box-shadow:0 4px 20px rgba(14,165,233,0.25);}
+#upload-bar .ub-label{font-size:12px;color:#bae6fd;font-family:var(--fc);letter-spacing:2px;white-space:nowrap;}
+#upload-bar input[type=file]{display:none;}
+.ub-btn{padding:7px 18px;border-radius:30px;font-family:var(--fm);font-size:12px;cursor:pointer;border:1.5px solid rgba(186,230,253,0.5);background:rgba(14,165,233,0.2);color:#e0f2fe;transition:all .2s;white-space:nowrap;}
+.ub-btn:hover{background:rgba(14,165,233,0.45);border-color:#bae6fd;}
+.ub-btn.active{background:var(--sky);color:#fff;border-color:var(--sky);}
+#upload-status{font-size:11px;color:#7dd3fc;font-family:var(--fm);}
+#col-mapper{display:none;background:rgba(255,255,255,0.97);position:fixed;inset:0;z-index:300;overflow-y:auto;padding:40px 28px;}
+.mapper-inner{max-width:720px;margin:0 auto;}
+.mapper-title{font-family:var(--fd);font-size:24px;font-weight:800;color:var(--sky-deep);margin-bottom:6px;}
+.mapper-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+.mapper-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.mrow{display:flex;flex-direction:column;gap:5px;}
+.mrow label{font-size:11px;letter-spacing:2px;color:var(--text3);font-family:var(--fc);}
+.mrow select{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border2);background:#f0f9ff;color:var(--text);font-family:var(--fm);font-size:12px;}
+.mapper-actions{display:flex;gap:12px;margin-top:10px;}
+.preview-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:20px;overflow-x:auto;display:block;}
+.preview-table th{background:var(--sky-deep);color:#fff;padding:7px 12px;text-align:left;font-family:var(--fc);}
+.preview-table td{padding:6px 12px;border-bottom:1px solid var(--border);color:var(--text2);}
+.data-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;background:rgba(13,148,136,0.12);color:var(--teal);border:1px solid rgba(13,148,136,0.3);font-family:var(--fc);}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:54px;background:rgba(240,249,255,0.9);border-bottom:1px solid var(--border2);backdrop-filter:blur(16px);box-shadow:0 2px 16px rgba(14,165,233,0.1);}
+.nav-logo{font-family:var(--fd);font-weight:800;font-size:17px;color:var(--sky-deep);letter-spacing:-.5px;}
+.nav-logo span{color:var(--sky)}
+.nav-links{display:flex;gap:3px;flex-wrap:wrap;}
+.nav-link{font-size:11px;padding:5px 12px;border-radius:20px;color:var(--text2);cursor:pointer;border:1px solid transparent;transition:all .2s;font-family:var(--fm);}
+.nav-link:hover,.nav-link.active{color:var(--sky-deep);border-color:var(--border2);background:rgba(14,165,233,0.1);}
+.nav-status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);}
+.pdot{width:8px;height:8px;border-radius:50%;background:var(--sky);box-shadow:var(--glow-sky);animation:pdot 2s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.section{position:relative;z-index:1;min-height:100vh;padding:148px 28px 80px;display:none;}
+.section.active{display:block;}
+#hero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-top:200px;}
+.hero-eyebrow{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--sky);margin-bottom:20px;font-family:var(--fc);}
+.hero-title{font-family:var(--fd);font-size:clamp(44px,7vw,84px);font-weight:800;line-height:.92;letter-spacing:-3px;margin-bottom:22px;}
+.hero-title .acc{color:var(--sky-deep);}
+.hero-title .dim{color:var(--text3);}
+.hero-sub{font-size:14px;color:var(--text2);max-width:540px;line-height:1.7;margin-bottom:40px;}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.btn{padding:11px 26px;border-radius:40px;font-family:var(--fm);font-size:13px;cursor:pointer;border:none;transition:all .22s;font-weight:500;}
+.btn-primary{background:linear-gradient(135deg,var(--sky),var(--sky-deep));color:#fff;box-shadow:var(--glow-sky);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 32px rgba(14,165,233,0.55);}
+.btn-outline{background:rgba(255,255,255,0.65);color:var(--sky-deep);border:1.5px solid var(--border2);backdrop-filter:blur(8px);}
+.btn-outline:hover{background:rgba(14,165,233,0.1);}
+.stats-row{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:56px;}
+.stat{text-align:center;}
+.stat-num{font-family:var(--fd);font-size:34px;font-weight:800;color:var(--sky-deep);line-height:1;transition:all .4s;}
+.stat-label{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:1px;}
+.sec-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;border-bottom:2px solid var(--border2);padding-bottom:16px;}
+.sec-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--sky);font-family:var(--fc);margin-bottom:6px;}
+.sec-title{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--text);}
+.sec-meta{font-size:12px;color:var(--text3);font-family:var(--fc);}
+.card{background:var(--card);backdrop-filter:blur(14px);border:1.5px solid var(--border);border-radius:16px;box-shadow:var(--shadow);transition:all .3s;}
+.card:hover{box-shadow:0 8px 32px rgba(14,165,233,0.18);}
+.card-p{padding:22px;}
+.card-title{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text);}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px;}
+.mcard{padding:22px;position:relative;overflow:hidden;cursor:pointer;}
+.mcard:hover{transform:translateY(-3px);}
+.mcard.safe{border-color:rgba(14,165,233,0.5);box-shadow:var(--glow-sky);}
+.mcard.warn{border-color:rgba(245,158,11,0.5);box-shadow:var(--glow-a);}
+.mcard.over{border-color:rgba(239,68,68,0.6);box-shadow:var(--glow-r);}
+.cg{position:absolute;inset:0;background:rgba(239,68,68,0.04);animation:dpulse 1.2s ease-in-out infinite;pointer-events:none;}
+@keyframes dpulse{0%,100%{opacity:.2}50%{opacity:1}}
+.mid{font-size:10px;letter-spacing:3px;color:var(--text3);font-family:var(--fc);margin-bottom:6px;}
+.mname{font-family:var(--fd);font-size:19px;font-weight:700;margin-bottom:3px;color:var(--text);}
+.mtype{font-size:12px;color:var(--text2);margin-bottom:18px;}
+.gauge-wrap{margin-bottom:14px;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px;}
+.gauge-track{height:8px;border-radius:4px;background:rgba(14,165,233,0.1);overflow:hidden;}
+.gauge-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.fsafe{background:linear-gradient(90deg,var(--sky),var(--sky-deep));box-shadow:0 0 8px rgba(14,165,233,0.4);}
+.fwarn{background:linear-gradient(90deg,#fbbf24,var(--amber));box-shadow:0 0 8px rgba(245,158,11,0.4);}
+.fover{background:linear-gradient(90deg,#f87171,var(--red));box-shadow:0 0 8px rgba(239,68,68,0.5);animation:fpulse 1s ease-in-out infinite;}
+@keyframes fpulse{0%,100%{opacity:1}50%{opacity:.5}}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-family:var(--fc);}
+.bsafe{background:rgba(14,165,233,0.1);color:var(--sky-deep);border:1px solid rgba(14,165,233,0.3);}
+.bwarn{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.3);}
+.bover{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.35);animation:blink 1.1s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.bdot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.mmetrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px;}
+.mmini{background:rgba(14,165,233,0.06);border-radius:8px;padding:7px;border:1px solid var(--border);}
+.mmini-l{font-size:10px;color:var(--text3);letter-spacing:1px;}
+.mmini-v{font-size:13px;font-weight:600;color:var(--text);}
+/* machine risk score badge on card */
+.risk-score-badge{margin-top:10px;padding:8px 12px;border-radius:10px;font-size:12px;display:flex;align-items:center;gap:8px;border:1.5px solid;}
+.rsb-critical{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.4);color:#dc2626;}
+.rsb-warning{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.35);color:#b45309;}
+.rsb-watch{background:rgba(234,179,8,0.07);border-color:rgba(234,179,8,0.25);color:#854d0e;}
+.rsb-safe{background:rgba(14,165,233,0.07);border-color:rgba(14,165,233,0.2);color:var(--sky-deep);}
+.rsb-icon{font-size:16px;}
+.rsb-txt{font-size:11px;font-family:var(--fc);font-weight:700;letter-spacing:.5px;}
+.rsb-num{font-family:var(--fd);font-size:20px;font-weight:800;margin-left:auto;}
+.dgrid{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.kpi{padding:16px;}
+.kpi-l{font-size:10px;letter-spacing:2px;color:var(--text3);margin-bottom:7px;font-family:var(--fc);}
+.kpi-v{font-family:var(--fd);font-size:26px;font-weight:800;line-height:1;transition:all .4s;}
+.kpi-d{font-size:11px;margin-top:5px;}
+.ksky .kpi-v{color:var(--sky-deep);}.kteal .kpi-v{color:var(--teal);}.kamb .kpi-v{color:var(--amber);}
+.alerts{display:flex;flex-direction:column;gap:7px;}
+.al{padding:9px 13px;border-radius:10px;font-size:12px;border:1.5px solid;display:flex;align-items:flex-start;gap:7px;}
+.al-r{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.25);color:#b91c1c;}
+.al-a{background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.2);color:#92400e;}
+.al-s{background:rgba(14,165,233,0.07);border-color:rgba(14,165,233,0.2);color:var(--sky-deep);}
+.al-t{background:rgba(13,148,136,0.07);border-color:rgba(13,148,136,0.2);color:var(--teal);}
+.al-time{font-size:10px;opacity:.5;margin-top:2px;font-family:var(--fc);}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.scrd{padding:22px;}
+.ai-rec{background:rgba(14,165,233,0.07);border:1.5px solid rgba(14,165,233,0.22);border-radius:10px;padding:11px 15px;font-size:12px;color:var(--text2);margin-top:12px;}
+.ai-rec strong{color:var(--sky-deep);}
+.rflow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:14px 0;}
+.fnode{background:rgba(14,165,233,0.07);border:1.5px solid var(--border);border-radius:10px;padding:11px;text-align:center;}
+.fnode-t{font-size:12px;font-weight:600;margin-bottom:3px;}
+.fnode-v{font-size:17px;font-weight:800;font-family:var(--fd);}
+.farrow{font-size:22px;color:var(--teal);animation:farr 1.5s ease-in-out infinite;}
+@keyframes farr{0%,100%{opacity:.3;transform:translateX(-4px)}50%{opacity:1;transform:translateX(4px)}}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.mcrd{padding:22px;}
+.fault{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;margin-bottom:9px;border:1.5px solid;cursor:pointer;transition:all .2s;}
+.fault:hover{transform:translateX(4px);}
+.fh{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3);}
+.fm{background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.25);}
+.fl{background:rgba(14,165,233,0.06);border-color:rgba(14,165,233,0.25);}
+.ficon{font-size:20px;width:32px;text-align:center;}
+.finfo{flex:1;}.fname{font-size:13px;font-weight:600;margin-bottom:2px;color:var(--text);}.fdesc{font-size:11px;color:var(--text2);}
+.fconf{font-family:var(--fd);font-size:17px;font-weight:800;}
+.ch{color:var(--red);}.cm{color:var(--amber);}.cl{color:var(--sky);}
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:20px;}
+.scen{padding:22px;position:relative;cursor:pointer;}
+.scen:hover{transform:translateY(-4px);}
+.scen.rec{border-color:var(--sky);box-shadow:var(--glow-sky);background:rgba(14,165,233,0.04);}
+.rec-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--sky),var(--sky-deep));color:#fff;font-size:10px;padding:3px 13px;border-radius:20px;font-family:var(--fc);font-weight:700;white-space:nowrap;box-shadow:var(--glow-sky);}
+.sname{font-family:var(--fd);font-size:17px;font-weight:700;margin-bottom:14px;color:var(--text);}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.srow:last-child{border-bottom:none;}
+.sk{color:var(--text2);}.sv{font-weight:700;font-family:var(--fd);font-size:15px;}
+.vg{color:var(--sky-deep);}.vw{color:var(--amber);}.vb{color:var(--red);}.vn{color:var(--teal);}
+.xai-panel{padding:22px;}
+.xrow{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.xname{font-size:12px;color:var(--text2);width:155px;flex-shrink:0;}
+.xtrack{flex:1;height:6px;background:rgba(14,165,233,0.1);border-radius:3px;overflow:hidden;}
+.xfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--sky-light),var(--sky));transition:width 1s ease;}
+.xpct{font-size:12px;color:var(--text);width:34px;text-align:right;font-family:var(--fc);}
+#closing{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.igrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;max-width:740px;margin:0 auto 44px;}
+.ibox{padding:20px;}
+.inum{font-family:var(--fd);font-size:30px;font-weight:800;color:var(--sky-deep);margin-bottom:5px;transition:all .4s;}
+.ilbl{font-size:11px;color:var(--text2);line-height:1.4;}
+.hq{font-family:var(--fd);font-size:clamp(20px,3vw,36px);font-weight:800;line-height:1.25;max-width:700px;letter-spacing:-1.5px;margin-bottom:44px;color:var(--text);}
+.hq .hl{color:var(--sky-deep);}.hq .hl2{color:var(--teal);}.hq .hl3{color:var(--amber);}
+.ticker{position:fixed;bottom:0;left:0;right:0;z-index:90;background:rgba(240,249,255,0.92);border-top:1.5px solid var(--border2);backdrop-filter:blur(12px);padding:5px 0;overflow:hidden;font-size:11px;font-family:var(--fc);color:var(--text2);}
+.ticker-inner{display:flex;gap:40px;animation:tscroll 28s linear infinite;white-space:nowrap;}
+@keyframes tscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:inline-flex;align-items:center;gap:6px;}
+.td{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+@media(max-width:768px){
+.fgrid,.dgrid,.mgrid,.sgrid,.tgrid{grid-template-columns:1fr;}
+.kpis{grid-template-columns:repeat(2,1fr);}
+.igrid{grid-template-columns:repeat(2,1fr);}
+.hero-title{font-size:40px;}
+.mapper-grid{grid-template-columns:1fr;}
+#pred-panel,#pred-toggle{right:8px;}
+#pred-panel{width:calc(100vw - 16px);}
+}
+@keyframes fup{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fup .6s ease both;}.fu1{animation-delay:.1s;}.fu2{animation-delay:.2s;}.fu3{animation-delay:.3s;}.fu4{animation-delay:.4s;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--sky-light);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div id="clouds-wrap"></div>
+
+<!-- ⛔ DANGER BANNER — shown when any machine is CRITICAL -->
+<div id="danger-banner">
+  <div class="db-inner">
+    <div class="db-icon">⛔</div>
+    <div style="flex:1">
+      <div class="db-text" id="db-text">DANGER — Machine failure risk HIGH</div>
+      <div class="db-sub" id="db-sub">Risk score exceeds critical threshold — immediate inspection recommended</div>
+    </div>
+    <div class="db-score" id="db-score">—</div>
+    <button class="db-close" onclick="dismissBanner()">Dismiss ✕</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">CHRONO<span>-WATT</span></div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="nav('hero',this)">Overview</div>
+    <div class="nav-link" onclick="nav('factory',this)">Factory</div>
+    <div class="nav-link" onclick="nav('dashboard',this)">Dashboard</div>
+    <div class="nav-link" onclick="nav('scheduling',this)">Schedule</div>
+    <div class="nav-link" onclick="nav('maintenance',this)">Maintenance</div>
+    <div class="nav-link" onclick="nav('tradeoffs',this)">Trade-offs</div>
+    <div class="nav-link" onclick="nav('closing',this)">Impact</div>
+  </div>
+  <div class="nav-status"><div class="pdot"></div><span id="live-lbl">LIVE</span></div>
+</nav>
+
+<!-- EXCEL UPLOAD BAR -->
+<div id="upload-bar">
+  <span class="ub-label">📊 DATA SOURCE</span>
+  <button class="ub-btn" onclick="document.getElementById('xlFile').click()">⬆ Upload Excel / CSV</button>
+  <input type="file" id="xlFile" accept=".xlsx,.xls,.csv" onchange="handleFile(this)">
+  <button class="ub-btn" id="mapBtn" onclick="openMapper()" style="display:none">⚙ Map Columns</button>
+  <button class="ub-btn" id="clearBtn" onclick="clearData()" style="display:none">✕ Clear Data</button>
+  <span id="upload-status">Using demo data — upload your Excel to populate with real values</span>
+  <span id="data-badge" style="display:none" class="data-badge">✓ Live Data Active</span>
+</div>
+
+<!-- COLUMN MAPPER OVERLAY -->
+<div id="col-mapper">
+  <div class="mapper-inner">
+    <div class="mapper-title">Map Your Excel Columns</div>
+    <div class="mapper-sub">Match your spreadsheet columns to the dashboard fields.</div>
+    <div id="preview-wrap"></div>
+    <div class="mapper-grid" id="mapper-grid"></div>
+    <div class="mapper-actions">
+      <button class="btn btn-primary" onclick="applyMapping()">✓ Apply & Load Dashboard</button>
+      <button class="btn btn-outline" onclick="closeMapper()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREDICTION PANEL (floating) -->
+<div id="pred-panel">
+  <div class="pp-head">
+    <span class="pp-title">⚡ AI RISK PREDICTIONS</span>
+    <button class="pp-close" onclick="togglePredPanel()">✕</button>
+  </div>
+  <div class="pp-body" id="pred-body"></div>
+</div>
+<button id="pred-toggle" onclick="togglePredPanel()">⚡ RISK SCORES</button>
+
+<!-- TICKER -->
+<div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+
+<!-- ══ HERO ══ -->
+<section class="section active" id="hero">
+  <div class="hero-eyebrow fu">Sustainability Hackathon Prototype</div>
+  <h1 class="hero-title fu fu1"><span class="acc">Chrono</span><br><span class="dim">Watt</span></h1>
+  <p class="hero-sub fu fu2">Factories waste energy, emit carbon, and fail silently. Chrono-Watt listens to machines through their energy signatures — predicting faults, enforcing carbon limits, and reusing what's left behind.</p>
+  <div class="hero-cta fu fu3">
+    <button class="btn btn-primary" onclick="nav('factory',document.querySelectorAll('.nav-link')[1])">Explore Prototype →</button>
+    <button class="btn btn-outline" onclick="nav('dashboard',document.querySelectorAll('.nav-link')[2])">View Dashboard</button>
+  </div>
+  <div class="stats-row fu fu4">
+    <div class="stat"><div class="stat-num" id="h-acc">&gt;91%</div><div class="stat-label">AI Accuracy</div></div>
+    <div class="stat"><div class="stat-num" id="h-co2">−22%</div><div class="stat-label">CO₂ Reduction</div></div>
+    <div class="stat"><div class="stat-num">4x</div><div class="stat-label">Outcomes Predicted</div></div>
+    <div class="stat"><div class="stat-num" id="h-save">£840</div><div class="stat-label">Saved / Day</div></div>
+  </div>
+</section>
+
+<!-- ══ FACTORY ══ -->
+<section class="section" id="factory">
+  <div class="sec-hdr">
+    <div><div class="sec-tag">01 — Factory Floor</div><div class="sec-title">Machine Carbon Gauges</div></div>
+    <div class="sec-meta" id="fclock">--:--:--</div>
+  </div>
+  <div class="fgrid" id="machine-cards"></div>
+  <div class="card card-p">
+    <div class="card-title">Live Energy Pipeline — Reuse Flows</div>
+    <div style="position:relative;height:140px;"><canvas id="flowChart"></canvas></div>
+  </div>
+</section>
+
+<!-- ══ DASHBOARD ══ -->
+<section class="section" id="dashboard">
+  <div class="sec-hdr">
+    <div><div class="sec-tag">02 — Live View</div><div class="sec-title">Carbon Footprint Dashboard</div></div>
+    <div class="sec-meta">● LIVE</div>
+  </div>
+  <div class="kpis">
+    <div class="card kpi ksky"><div class="kpi-l">TOTAL CO₂ TODAY</div><div class="kpi-v" id="k1">243 kg</div><div class="kpi-d" style="color:var(--sky)">▼ 18% vs yesterday</div></div>
+    <div class="card kpi ksky"><div class="kpi-l">ENERGY USED</div><div class="kpi-v" id="k2">1,840 kWh</div><div class="kpi-d" style="color:var(--sky)">▼ 12% vs target</div></div>
+    <div class="card kpi kteal"><div class="kpi-l">ENERGY REUSED</div><div class="kpi-v" id="k3">220 kWh</div><div class="kpi-d" style="color:var(--teal)">↻ 12% of consumed</div></div>
+    <div class="card kpi kamb"><div class="kpi-l">AI ACCURACY</div><div class="kpi-v" id="k4">91.4%</div><div class="kpi-d" style="color:var(--amber)">4-outcome model</div></div>
+  </div>
+  <div class="dgrid">
+    <div class="card card-p">
+      <div class="card-title">CO₂ Per Machine (kg) — 100 kg limit shown</div>
+      <div style="position:relative;height:200px;"><canvas id="barChart"></canvas></div>
+    </div>
+    <div>
+      <div class="card card-p" style="margin-bottom:14px;">
+        <div class="card-title">Live Alerts</div>
+        <div class="alerts" id="alerts-list"></div>
+      </div>
+      <div class="card card-p">
+        <div class="card-title">Batch Emissions Today</div>
+        <div style="position:relative;height:90px;"><canvas id="sparkChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SCHEDULING ══ -->
+<section class="section" id="scheduling">
+  <div class="sec-hdr">
+    <div><div class="sec-tag">03 — Smart Scheduling + Energy Reuse</div><div class="sec-title">Peak-Aware Scheduling</div></div>
+  </div>
+  <div class="sgrid">
+    <div class="card scrd">
+      <div class="card-title">Grid Tariff & Renewable Window</div>
+      <div style="position:relative;height:170px;"><canvas id="timelineChart"></canvas></div>
+      <div class="ai-rec"><strong>AI Recommendation:</strong> Run high-load machines between <strong>22:00–05:00</strong> — solar surplus + off-peak tariff cuts CO₂ intensity by 34%. Saving: <strong>28 kg CO₂/shift</strong>.</div>
+      <div style="margin-top:12px;display:flex;gap:14px;font-size:11px;color:var(--text2);">
+        <span style="color:var(--red)">■</span> Peak &nbsp;<span style="color:var(--sky)">■</span> AI Window &nbsp;<span style="color:var(--teal)">■</span> Solar
+      </div>
+    </div>
+    <div class="card scrd">
+      <div class="card-title">Energy Reuse Pathways</div>
+      <div class="rflow">
+        <div class="fnode"><div class="fnode-t" style="color:var(--amber)" id="reuse-src-name">Machine B</div><div style="font-size:11px;color:var(--text2)">Excess heat</div><div class="fnode-v" style="color:var(--amber)" id="r1">18 kWh</div></div>
+        <div class="farrow">→</div>
+        <div>
+          <div class="fnode" style="margin-bottom:9px;"><div class="fnode-t" style="color:var(--teal)">Water Pre-heater</div><div class="fnode-v" style="color:var(--teal)" id="r2">11 kWh</div></div>
+          <div class="fnode"><div class="fnode-t" style="color:var(--sky-deep)">Material Dryer</div><div class="fnode-v" style="color:var(--sky-deep)" id="r3">7 kWh</div></div>
+        </div>
+      </div>
+      <div style="background:rgba(14,165,233,0.07);border:1.5px solid var(--border2);border-radius:10px;padding:11px;margin-top:14px;font-size:12px;color:var(--sky-deep);">
+        Total avoided: <strong style="font-size:15px" id="rtot">22 kWh/shift</strong> → <strong id="rco2">11 kg CO₂</strong>/run
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MAINTENANCE ══ -->
+<section class="section" id="maintenance">
+  <div class="sec-hdr">
+    <div><div class="sec-tag">04 — Predictive Maintenance</div><div class="sec-title">Early Fault Detection</div></div>
+  </div>
+  <div class="mgrid">
+    <div class="card mcrd">
+      <div class="card-title">Detected Faults — Live</div>
+      <div id="fault-list"></div>
+    </div>
+    <div class="card mcrd">
+      <div class="card-title">Energy Signature — Anomaly View</div>
+      <div style="position:relative;height:100px;"><canvas id="waveChart"></canvas></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--amber);">▲ Irregular spike detected — bearing wear signature</div>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="mmini"><div class="mmini-l">BEARING CONF.</div><div class="mmini-v" style="color:var(--red)" id="mc1">87%</div></div>
+          <div class="mmini"><div class="mmini-l">TIME TO FAIL</div><div class="mmini-v" style="color:var(--amber)">14 hrs</div></div>
+          <div class="mmini"><div class="mmini-l">ENERGY WASTE</div><div class="mmini-v" style="color:var(--amber)" id="mw">+19%</div></div>
+          <div class="mmini"><div class="mmini-l">CO₂ IF FIXED</div><div class="mmini-v" style="color:var(--sky-deep)">−38 kg</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TRADE-OFFS ══ -->
+<section class="section" id="tradeoffs">
+  <div class="sec-hdr">
+    <div><div class="sec-tag">05 — Adaptive Carbon Constraints</div><div class="sec-title">AI Trade-off Modeling</div></div>
+  </div>
+  <div style="background:rgba(14,165,233,0.07);border:1.5px solid rgba(14,165,233,0.22);border-radius:12px;padding:13px 18px;margin-bottom:24px;font-size:13px;color:var(--sky-deep);">
+    Chrono-Watt simultaneously predicts <strong>quality · yield · performance · energy</strong> — models trade-offs for each shift.
+  </div>
+  <div class="tgrid">
+    <div class="card scen"><div class="sname" style="color:var(--sky-deep)">Conservative</div><div class="srow"><span class="sk">Energy reduction</span><span class="sv vg">−15%</span></div><div class="srow"><span class="sk">Yield impact</span><span class="sv vb">−5%</span></div><div class="srow"><span class="sk">CO₂ improvement</span><span class="sv vg">+22%</span></div><div class="srow"><span class="sk">Quality</span><span class="sv vw">B+</span></div><div class="srow"><span class="sk">Cost saving</span><span class="sv vg">£1,100/d</span></div></div>
+    <div class="card scen rec"><div class="rec-badge">★ AI RECOMMENDED</div><div class="sname" style="color:var(--sky-deep)">Balanced</div><div class="srow"><span class="sk">Energy reduction</span><span class="sv vg">−10%</span></div><div class="srow"><span class="sk">Yield impact</span><span class="sv vw">−2%</span></div><div class="srow"><span class="sk">CO₂ improvement</span><span class="sv vg">+15%</span></div><div class="srow"><span class="sk">Quality</span><span class="sv vn">A</span></div><div class="srow"><span class="sk">Cost saving</span><span class="sv vg">£840/d</span></div></div>
+    <div class="card scen"><div class="sname" style="color:var(--amber)">Production-First</div><div class="srow"><span class="sk">Energy reduction</span><span class="sv vw">−4%</span></div><div class="srow"><span class="sk">Yield impact</span><span class="sv vg">0%</span></div><div class="srow"><span class="sk">CO₂ improvement</span><span class="sv vw">+6%</span></div><div class="srow"><span class="sk">Quality</span><span class="sv vg">A+</span></div><div class="srow"><span class="sk">Cost saving</span><span class="sv vw">£280/d</span></div></div>
+  </div>
+  <div class="card xai-panel">
+    <div class="card-title">Explainability — Feature Importance</div>
+    <div class="xrow"><div class="xname">Spindle speed</div><div class="xtrack"><div class="xfill" id="x1" style="width:34%"></div></div><div class="xpct" id="x1p">34%</div></div>
+    <div class="xrow"><div class="xname">Ambient temperature</div><div class="xtrack"><div class="xfill" id="x2" style="width:21%"></div></div><div class="xpct" id="x2p">21%</div></div>
+    <div class="xrow"><div class="xname">Batch size</div><div class="xtrack"><div class="xfill" id="x3" style="width:18%"></div></div><div class="xpct" id="x3p">18%</div></div>
+    <div class="xrow"><div class="xname">Time-of-day tariff</div><div class="xtrack"><div class="xfill" id="x4" style="width:14%"></div></div><div class="xpct" id="x4p">14%</div></div>
+    <div class="xrow"><div class="xname">Renewable availability</div><div class="xtrack"><div class="xfill" id="x5" style="width:9%"></div></div><div class="xpct" id="x5p">9%</div></div>
+    <div class="xrow"><div class="xname">Maintenance risk</div><div class="xtrack"><div class="xfill" id="x6" style="width:4%"></div></div><div class="xpct" id="x6p">4%</div></div>
+  </div>
+</section>
+
+<!-- ══ IMPACT ══ -->
+<section class="section" id="closing">
+  <div style="max-width:780px;margin:0 auto;padding-top:40px;">
+    <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--sky);margin-bottom:28px;font-family:var(--fc);">Project Chrono-Watt — Impact Summary</div>
+    <div class="hq">Factories don't just <span class="hl">consume</span> energy —<br>they <span class="hl2">speak</span> through it.<br><span style="font-size:.65em;color:var(--text2);">Chrono-Watt <span class="hl">listens</span>, sets <span class="hl3">limits</span>,<br>reuses <span class="hl2">waste</span>, and cuts carbon.</span></div>
+    <div class="igrid">
+      <div class="card ibox"><div class="inum" id="i1">&gt;91%</div><div class="ilbl">Prediction accuracy across 4 outcomes</div></div>
+      <div class="card ibox"><div class="inum" id="i2">−22%</div><div class="ilbl">CO₂ reduction per production run</div></div>
+      <div class="card ibox"><div class="inum" id="i3">12%</div><div class="ilbl">Total energy reused instead of wasted</div></div>
+      <div class="card ibox"><div class="inum" id="i4">£840</div><div class="ilbl">Cost savings per day per factory line</div></div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PREDICTION ENGINE  (embedded from prediction_logic.js)
+// ═══════════════════════════════════════════════════════════
+const RISK_WEIGHTS = {
+  co2_overrun: 0.25, energy_spike: 0.25,
+  fault_signal: 0.20, vibration_anomaly: 0.20, yield_degradation: 0.10
+};
+const THRESHOLDS = {
+  co2_overrun_pct: 110, energy_spike_pct: 130,
+  fault_signal_pct: 80, vibration_hz_max: 1500, yield_min_pct: 85
+};
+
+function scoreDim(actual, safeMax) { return Math.min(actual / safeMax, 1.0); }
+
+function predictFailureRisk(reading) {
+  const { name, co2_current, co2_limit = 100, energy_kw,
+    energy_kw_baseline = energy_kw * 0.8, vibration_hz = 800,
+    fault_confidence = 0, yield_pct = 95 } = reading;
+
+  const dim_co2       = scoreDim((co2_current / co2_limit) * 100, THRESHOLDS.co2_overrun_pct);
+  const dim_energy    = scoreDim((energy_kw / energy_kw_baseline) * 100, THRESHOLDS.energy_spike_pct);
+  const dim_fault     = scoreDim(fault_confidence, THRESHOLDS.fault_signal_pct);
+  const dim_vibration = scoreDim(vibration_hz, THRESHOLDS.vibration_hz_max);
+  const dim_yield     = scoreDim(Math.max(0, 100 - yield_pct), 100 - THRESHOLDS.yield_min_pct);
+
+  const raw = dim_co2 * RISK_WEIGHTS.co2_overrun
+            + dim_energy * RISK_WEIGHTS.energy_spike
+            + dim_fault * RISK_WEIGHTS.fault_signal
+            + dim_vibration * RISK_WEIGHTS.vibration_anomaly
+            + dim_yield * RISK_WEIGHTS.yield_degradation;
+
+  const score = Math.round(raw * 100);
+  let level, alertMsg;
+
+  if (score >= 70) {
+    level = "CRITICAL";
+    alertMsg = `⛔ DANGER — Machine failure risk HIGH on ${name}`;
+  } else if (score >= 45) {
+    level = "WARNING";
+    alertMsg = `⚠️ Alert: Machine failure risk ELEVATED on ${name}`;
+  } else if (score >= 25) {
+    level = "WATCH";
+    alertMsg = `🔶 Watch: ${name} showing early anomaly signals`;
+  } else {
+    level = "SAFE";
+    alertMsg = `✅ ${name} operating within normal parameters`;
+  }
+  return { score, level, alertMsg };
+}
+
+function runFactoryPrediction(machines) {
+  const results = machines.map(m => ({ machine: m.name, ...predictFailureRisk({
+    name: m.name, co2_current: m.co2, co2_limit: m.limit || 100,
+    energy_kw: m.energy_kw, energy_kw_baseline: (m.energy_kw || 5) * 0.8,
+    vibration_hz: m.vibration_hz || 800, fault_confidence: m.fault_conf || 0,
+    yield_pct: m.yield_pct || 95
+  })}));
+
+  const critical = results.filter(r => r.level === "CRITICAL");
+  const warnings = results.filter(r => r.level === "WARNING");
+
+  let factoryAlert = null;
+  if (critical.length) {
+    factoryAlert = { level: "CRITICAL", machines: critical, score: Math.max(...critical.map(r=>r.score)),
+      text: `⛔ DANGER — Machine failure risk HIGH`,
+      sub: `${critical.map(r=>r.machine).join(", ")} — Halt affected lines immediately` };
+  } else if (warnings.length) {
+    factoryAlert = { level: "WARNING", machines: warnings, score: Math.max(...warnings.map(r=>r.score)),
+      text: `⚠️ Alert: Machine failure risk ELEVATED`,
+      sub: `${warnings.map(r=>r.machine).join(", ")} — Schedule maintenance within 24 hrs` };
+  }
+  return { results, factoryAlert };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BANNER & PREDICTION PANEL UI
+// ═══════════════════════════════════════════════════════════
+let bannerDismissed = false;
+let predPanelOpen = false;
+
+function updatePredictionUI(machines) {
+  const { results, factoryAlert } = runFactoryPrediction(machines);
+
+  // Update floating button
+  const btn = document.getElementById('pred-toggle');
+  const hasCrit = results.some(r => r.level === 'CRITICAL');
+  btn.classList.toggle('has-critical', hasCrit);
+  btn.textContent = hasCrit ? '⛔ RISK ALERT' : '⚡ RISK SCORES';
+
+  // Update prediction panel body
+  const body = document.getElementById('pred-body');
+  body.innerHTML = results.map(r => {
+    const cls = r.level.toLowerCase();
+    const barCls = {CRITICAL:'bc',WARNING:'bw',WATCH:'bwa',SAFE:'bs'}[r.level];
+    return `<div class="pred-row pr-${cls}">
+      <div class="pr-top">
+        <span class="pr-name">${r.machine}</span>
+        <span class="pr-score sc-${cls}">${r.score}</span>
+      </div>
+      <div class="pr-alert">${r.alertMsg}</div>
+      <div class="pr-bar-wrap"><div class="pr-bar ${barCls}" style="width:${r.score}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Update danger banner
+  const banner = document.getElementById('danger-banner');
+  if (factoryAlert && !bannerDismissed) {
+    document.getElementById('db-text').textContent = factoryAlert.text;
+    document.getElementById('db-sub').textContent = factoryAlert.sub;
+    document.getElementById('db-score').textContent = factoryAlert.score + '/100';
+    banner.style.display = 'block';
+    // Adjust section padding when banner shown
+    document.querySelectorAll('.section').forEach(s => s.style.paddingTop = '192px');
+  } else if (!factoryAlert) {
+    banner.style.display = 'none';
+    document.querySelectorAll('.section').forEach(s => s.style.paddingTop = '');
+  }
+
+  return results;
+}
+
+function dismissBanner() {
+  bannerDismissed = true;
+  document.getElementById('danger-banner').style.display = 'none';
+  document.querySelectorAll('.section').forEach(s => s.style.paddingTop = '');
+}
+
+function togglePredPanel() {
+  predPanelOpen = !predPanelOpen;
+  const panel = document.getElementById('pred-panel');
+  const btn = document.getElementById('pred-toggle');
+  panel.style.display = predPanelOpen ? 'block' : 'none';
+  btn.style.display = predPanelOpen ? 'none' : 'block';
+  if (predPanelOpen) panel.style.bottom = '34px';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXCEL / CSV HANDLING
+// ═══════════════════════════════════════════════════════════
+let rawRows = [], headers = [], mappedData = null, usingLiveData = false;
+
+const FIELD_DEFS = [
+  { key:'machine_name', label:'Machine Name / ID', hint:'e.g. Machine A, MCH-001' },
+  { key:'machine_type', label:'Machine Type', hint:'e.g. CNC, Press' },
+  { key:'co2_current', label:'CO₂ Current (kg)', hint:'Current CO₂ value' },
+  { key:'co2_limit', label:'CO₂ Limit (kg)', hint:'Budget ceiling (default 100)' },
+  { key:'energy_kw', label:'Energy (kW)', hint:'Live power draw' },
+  { key:'energy_kwh', label:'Energy Used (kWh)', hint:'Total energy consumed' },
+  { key:'energy_reused', label:'Energy Reused (kWh)', hint:'Recovered/reused energy' },
+  { key:'yield_pct', label:'Yield (%)', hint:'Production yield' },
+  { key:'quality_grade', label:'Quality Grade', hint:'e.g. A, B, C or A+' },
+  { key:'fault_name', label:'Fault / Issue Name', hint:'e.g. Bearing Wear' },
+  { key:'fault_confidence', label:'Fault Confidence (%)', hint:'0–100' },
+  { key:'fault_desc', label:'Fault Description', hint:'Short description' },
+  { key:'maint_status', label:'Maintenance Status', hint:'e.g. OK, WATCH, THROTTLE' },
+  { key:'cost_saving', label:'Cost Saving (£/day)', hint:'Financial saving' },
+  { key:'ai_accuracy', label:'AI Accuracy (%)', hint:'Model accuracy' },
+];
+
+function handleFile(input) {
+  const file = input.files[0]; if(!file) return;
+  document.getElementById('upload-status').textContent = 'Reading file…';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let wb = file.name.endsWith('.csv')
+        ? XLSX.read(e.target.result, {type:'string'})
+        : XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rawRows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      headers = rawRows.length ? Object.keys(rawRows[0]) : [];
+      document.getElementById('upload-status').textContent =
+        `✓ "${file.name}" loaded — ${rawRows.length} rows, ${headers.length} columns`;
+      document.getElementById('mapBtn').style.display = 'inline-block';
+      document.getElementById('clearBtn').style.display = 'inline-block';
+      openMapper();
+    } catch(err) {
+      document.getElementById('upload-status').textContent = '✗ Error: ' + err.message;
+    }
+  };
+  file.name.endsWith('.csv') ? reader.readAsText(file) : reader.readAsArrayBuffer(file);
+}
+
+function openMapper() {
+  if (!headers.length) return;
+  const previewRows = rawRows.slice(0,4);
+  let tbl = '<div style="overflow-x:auto;margin-bottom:20px;"><table class="preview-table"><thead><tr>';
+  headers.forEach(h => tbl += `<th>${h}</th>`);
+  tbl += '</tr></thead><tbody>';
+  previewRows.forEach(row => { tbl += '<tr>'; headers.forEach(h => tbl += `<td>${row[h]}</td>`); tbl += '</tr>'; });
+  tbl += '</tbody></table></div>';
+  document.getElementById('preview-wrap').innerHTML = `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Preview (first ${previewRows.length} rows):</div>${tbl}`;
+  let gridHTML = '';
+  FIELD_DEFS.forEach(f => {
+    gridHTML += `<div class="mrow"><label>${f.label}</label><select id="map_${f.key}"><option value="">— skip —</option>${headers.map(h=>`<option value="${h}"${autoMatch(h,f.key)?' selected':''}>${h}</option>`).join('')}</select><span style="font-size:10px;color:var(--text3);">${f.hint}</span></div>`;
+  });
+  document.getElementById('mapper-grid').innerHTML = gridHTML;
+  document.getElementById('col-mapper').style.display = 'block';
+}
+
+function autoMatch(col, key) {
+  const h = col.toLowerCase().replace(/[\s_-]/g,'');
+  const p = {machine_name:['machine','machinename','machineid','name','id'],machine_type:['type','category'],co2_current:['co2','carbon','emission','emissions'],co2_limit:['limit','budget','cap'],energy_kw:['kw','power','energykw'],energy_kwh:['kwh','energyused'],energy_reused:['reused','recovered','recycle'],yield_pct:['yield','yieldpct'],quality_grade:['quality','grade'],fault_name:['fault','issue','error'],fault_confidence:['confidence','faultconf','probability'],fault_desc:['description','desc','faultdesc'],maint_status:['status','maintenance'],cost_saving:['cost','saving','£','gbp'],ai_accuracy:['accuracy','aiaccuracy','acc']};
+  return (p[key]||[]).some(pat => h.includes(pat));
+}
+
+function closeMapper() { document.getElementById('col-mapper').style.display='none'; }
+
+function getVal(row, k) {
+  const sel = document.getElementById('map_'+k);
+  return (sel && sel.value) ? row[sel.value] : null;
+}
+function num(v, fb=0) {
+  if (v===null||v===undefined||v==='') return fb;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? fb : n;
+}
+
+function applyMapping() {
+  closeMapper();
+  if (!rawRows.length) return;
+  const machineMap = {};
+  rawRows.forEach(row => {
+    const mname = getVal(row,'machine_name') || ('Machine '+(Object.keys(machineMap).length+1));
+    if (!machineMap[mname]) machineMap[mname] = [];
+    machineMap[mname].push(row);
+  });
+  const machines = Object.entries(machineMap).map(([name,rows]) => {
+    const last = rows[rows.length-1];
+    const avg = (k,fb) => { const v=rows.map(r=>num(getVal(r,k))).filter(v=>v!==0||fb===0); return v.length?v.reduce((a,b)=>a+b,0)/v.length:fb; };
+    return {
+      name, type: getVal(last,'machine_type')||'Machine',
+      co2: avg('co2_current', Math.random()*80+20),
+      limit: avg('co2_limit', 100),
+      energy_kw: avg('energy_kw', Math.random()*10+2),
+      energy_kwh: avg('energy_kwh', 0), reused: avg('energy_reused', 0),
+      yield_pct: avg('yield_pct', 90+Math.random()*8),
+      quality: getVal(last,'quality_grade')||'',
+      fault_name: getVal(last,'fault_name')||'', fault_conf: avg('fault_confidence', 0),
+      fault_desc: getVal(last,'fault_desc')||'', maint: getVal(last,'maint_status')||'OK',
+      cost_saving: avg('cost_saving', 840), ai_accuracy: avg('ai_accuracy', 91.4), rows
+    };
+  });
+  mappedData = machines; usingLiveData = true;
+  document.getElementById('data-badge').style.display = 'inline-flex';
+  document.getElementById('upload-status').textContent = `✓ ${machines.length} machine(s) loaded`;
+  S.machines = machines;
+  S.co2 = machines.reduce((s,m)=>s+m.co2,0);
+  S.energy = machines.reduce((s,m)=>s+(m.energy_kwh||m.energy_kw*8),0)||S.energy;
+  S.reused = machines.reduce((s,m)=>s+(m.reused||0),0)||S.reused;
+  S.acc = machines.find(m=>m.ai_accuracy>0)?.ai_accuracy||S.acc;
+  S.save = machines.reduce((s,m)=>s+m.cost_saving,0)/machines.length||S.save;
+  S.r1 = machines.reduce((s,m)=>s+(m.reused||0),0)||S.r1;
+  bannerDismissed = false;
+  rebuildMachineCards(); rebuildAlerts(); rebuildFaultList(); updateCharts();
+  updatePredictionUI(getMachines());
+}
+
+function clearData() {
+  rawRows=[]; headers=[]; mappedData=null; usingLiveData=false;
+  document.getElementById('upload-status').textContent='Using demo data';
+  document.getElementById('mapBtn').style.display='none';
+  document.getElementById('clearBtn').style.display='none';
+  document.getElementById('data-badge').style.display='none';
+  document.getElementById('xlFile').value='';
+  S.machines=null; bannerDismissed=false;
+  rebuildMachineCards(); rebuildAlerts(); rebuildFaultList();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLOUDS
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const wrap = document.getElementById('clouds-wrap');
+  [[320,65,'7%',58],[190,42,'19%',42],[440,72,'4%',76],[155,36,'26%',33],[270,55,'13%',52]].forEach(([w,h,top,dur],i)=>{
+    const d=document.createElement('div'); d.className='cloud';
+    d.style.cssText=`width:${w}px;height:${h}px;top:${top};opacity:.55;animation-duration:${dur}s;animation-delay:${-i*9}s`;
+    wrap.appendChild(d);
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════════════════════
+function nav(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el) el.classList.add('active');
+  setTimeout(()=>{ Object.values(charts).forEach(c=>{if(c)c.resize();}); }, 50);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  machines:null, ma:42, mb:78, mc:103, mae:4.2, mbe:9.8, mce:14.6,
+  co2:243, energy:1840, reused:220, acc:91.4, r1:18, r2:11, r3:7,
+  fb:87, fc:73, fa:41, save:840
+};
+
+function jit(v,r,mn,mx){ return Math.max(mn,Math.min(mx, v+(Math.random()-.5)*r)); }
+
+function tick(){
+  if (!usingLiveData) {
+    S.ma=jit(S.ma,4,28,62); S.mb=jit(S.mb,6,55,93); S.mc=jit(S.mc,5,90,118);
+    S.mae=jit(S.mae,.4,2.8,6.8); S.mbe=jit(S.mbe,.6,7.2,13); S.mce=jit(S.mce,.8,10.5,17.5);
+    S.co2=jit(S.co2,12,195,295); S.energy=jit(S.energy,45,1580,2120); S.reused=jit(S.reused,14,165,290);
+    S.acc=jit(S.acc,.9,87.5,94.8);
+    S.r1=jit(S.r1,2,11,27); S.r2=S.r1*(.55+Math.random()*.15); S.r3=Math.max(1,S.r1-S.r2);
+    S.fb=jit(S.fb,3,76,96); S.fc=jit(S.fc,3,60,84); S.fa=jit(S.fa,3,30,54);
+    S.save=jit(S.save,35,680,1020);
+  } else {
+    if(S.machines) S.machines.forEach(m=>{
+      m.co2=jit(m.co2,1.5,m.co2*.92,m.co2*1.08);
+      m.energy_kw=jit(m.energy_kw,.2,m.energy_kw*.9,m.energy_kw*1.1);
+    });
+    S.r1=jit(S.r1,1,S.r1*.9,S.r1*1.1);
+    S.r2=S.r1*(.55+Math.random()*.15); S.r3=Math.max(1,S.r1-S.r2);
+    S.fb=jit(S.fb,1,S.fb*.95,S.fb*1.05);
+  }
+  updateDOM(); updateCharts();
+  updatePredictionUI(getMachines());
+}
+
+function set(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+function setW(id,pct){ const e=document.getElementById(id); if(e) e.style.width=Math.min(pct,100)+'%'; }
+
+function getMachines() {
+  if (S.machines && S.machines.length) return S.machines;
+  return [
+    {name:'Machine A',type:'Hydraulic Stamping Press',co2:S.ma,limit:100,energy_kw:S.mae,vibration_hz:750,yield_pct:98.2,quality:'A+',maint:'OK',fault_conf:S.fa,fault_name:'Lubrication Degraded',fault_desc:'Friction signature elevated'},
+    {name:'Machine B',type:'5-Axis CNC Router',co2:S.mb,limit:100,energy_kw:S.mbe,vibration_hz:1240,yield_pct:94.1,quality:'B',maint:'WATCH',fault_conf:S.fb,fault_name:'Bearing Wear',fault_desc:'Irregular spike at 1,240 Hz'},
+    {name:'Machine C',type:'Injection Mold Press',co2:S.mc,limit:100,energy_kw:S.mce,vibration_hz:1410,yield_pct:88.5,quality:'C',maint:'THROTTLE',fault_conf:S.fc,fault_name:'Clogged Filter',fault_desc:'Pressure delta +22%'},
+  ];
+}
+
+function statusForCO2(co2,limit){ const p=(co2/limit)*100; return p>=100?'over':p>=70?'warn':'safe'; }
+
+function rebuildMachineCards() {
+  const machines = getMachines();
+  const predResults = machines.map(m => predictFailureRisk({
+    name:m.name, co2_current:m.co2, co2_limit:m.limit||100,
+    energy_kw:m.energy_kw, energy_kw_baseline:(m.energy_kw||5)*.8,
+    vibration_hz:m.vibration_hz||800, fault_confidence:m.fault_conf||0, yield_pct:m.yield_pct||95
+  }));
+
+  const container = document.getElementById('machine-cards');
+  container.innerHTML = machines.map((m,idx) => {
+    const limit = m.limit||100;
+    const pct = Math.min(((m.co2/limit)*100),110).toFixed(0);
+    const status = statusForCO2(m.co2,limit);
+    const fillClass = status==='safe'?'fsafe':status==='warn'?'fwarn':'fover';
+    const badgeClass = status==='safe'?'bsafe':status==='warn'?'bwarn':'bover';
+    const badgeText = status==='over'?'LIMIT EXCEEDED':(status==='warn'?`WARNING — ${Math.round(m.co2)}/${limit} kg`:`SAFE — ${Math.round(m.co2)}/${limit} kg`);
+    const overlayHTML = status==='over'?'<div class="cg"></div>':'';
+    const maintColor = m.maint==='OK'?'var(--sky)':m.maint==='WATCH'?'var(--amber)':'var(--red)';
+    const yieldColor = m.yield_pct>95?'var(--text)':m.yield_pct>90?'var(--amber)':'var(--red)';
+
+    // ── RISK SCORE BADGE ──
+    const pred = predResults[idx];
+    const rsbCls = {CRITICAL:'rsb-critical',WARNING:'rsb-warning',WATCH:'rsb-watch',SAFE:'rsb-safe'}[pred.level];
+    const rsbIcon = {CRITICAL:'⛔',WARNING:'⚠️',WATCH:'🔶',SAFE:'✅'}[pred.level];
+    const rsbLabel = {CRITICAL:'MACHINE FAILURE RISK HIGH',WARNING:'FAILURE RISK ELEVATED',WATCH:'ANOMALY DETECTED',SAFE:'NORMAL OPERATION'}[pred.level];
+    const rsbNumCls = {CRITICAL:'sc-critical',WARNING:'sc-warning',WATCH:'sc-watch',SAFE:'sc-safe'}[pred.level];
+
+    return `<div class="card mcard ${status}" id="mcard_${idx}">
+      ${overlayHTML}
+      <div class="mid">MCH-${String(idx+1).padStart(3,'0')} · ${(m.type||'MACHINE').toUpperCase()}</div>
+      <div class="mname">${m.name}</div>
+      <div class="mtype">${m.type||''}</div>
+      <div class="gauge-wrap">
+        <div class="gauge-lbl"><span>CO₂ Budget</span><span id="mp_${idx}"${status==='over'?' style="color:var(--red)"':''}>${pct}%</span></div>
+        <div class="gauge-track"><div class="gauge-fill ${fillClass}" id="mf_${idx}" style="width:${Math.min(pct,100)}%"></div></div>
+      </div>
+      <span class="badge ${badgeClass}"><span class="bdot"></span><span>${badgeText}</span></span>
+      <div class="risk-score-badge ${rsbCls}">
+        <span class="rsb-icon">${rsbIcon}</span>
+        <span class="rsb-txt">${rsbLabel}</span>
+        <span class="pr-score ${rsbNumCls}" style="font-family:var(--fd);font-size:18px;font-weight:800;margin-left:auto;">${pred.score}/100</span>
+      </div>
+      <div class="mmetrics">
+        <div class="mmini"><div class="mmini-l">YIELD</div><div class="mmini-v" style="color:${yieldColor}">${m.yield_pct?m.yield_pct.toFixed(1)+'%':'—'}</div></div>
+        <div class="mmini"><div class="mmini-l">QUALITY</div><div class="mmini-v">${m.quality||'—'}</div></div>
+        <div class="mmini"><div class="mmini-l">ENERGY</div><div class="mmini-v" id="me_${idx}">${m.energy_kw?m.energy_kw.toFixed(1)+' kW':'—'}</div></div>
+        <div class="mmini"><div class="mmini-l">MAINT</div><div class="mmini-v" style="color:${maintColor}">${m.maint||'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function rebuildAlerts() {
+  const machines = getMachines();
+  const predResults = machines.map(m => predictFailureRisk({
+    name:m.name, co2_current:m.co2, co2_limit:m.limit||100,
+    energy_kw:m.energy_kw, energy_kw_baseline:(m.energy_kw||5)*.8,
+    vibration_hz:m.vibration_hz||800, fault_confidence:m.fault_conf||0, yield_pct:m.yield_pct||95
+  }));
+
+  let html = '';
+  predResults.filter(r=>r.level==='CRITICAL').forEach(r=>{
+    html += `<div class="al al-r"><div>⛔</div><div><strong>${r.alertMsg}</strong><div class="al-time">Risk score: ${r.score}/100 — Just now</div></div></div>`;
+  });
+  predResults.filter(r=>r.level==='WARNING').forEach(r=>{
+    html += `<div class="al al-a"><div>⚠️</div><div>${r.alertMsg}<div class="al-time">Risk score: ${r.score}/100 — 4 min ago</div></div></div>`;
+  });
+  const over = machines.filter(m=>statusForCO2(m.co2,m.limit||100)==='over');
+  over.forEach(m=>{ html+=`<div class="al al-r"><div>⚠</div><div>${m.name} exceeded carbon budget (${Math.round(m.co2)} kg)<div class="al-time">Just now</div></div></div>`; });
+  html += `<div class="al al-t"><div>↻</div><div>${Math.round(S.r1||18)} kWh excess heat redirected to pre-heater<div class="al-time">12 min ago</div></div></div>`;
+  html += `<div class="al al-s"><div>◎</div><div>Off-peak window opens 22:00 — jobs deferred<div class="al-time">18 min ago</div></div></div>`;
+  const el = document.getElementById('alerts-list'); if(el) el.innerHTML = html;
+}
+
+function rebuildFaultList() {
+  const machines = getMachines();
+  const faults = machines.filter(m=>m.fault_name||m.fault_conf>0).sort((a,b)=>(b.fault_conf||0)-(a.fault_conf||0));
+  if (!faults.length) {
+    document.getElementById('fault-list').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No fault data. Map the Fault columns in your Excel.</div>';
+    return;
+  }
+  const colors=['fh','fm','fl'], confColors=['ch','cm','cl'], icons=['⚙','⧖','◎'];
+  let html = faults.slice(0,5).map((m,i)=>`<div class="fault ${colors[Math.min(i,2)]}">
+    <div class="ficon">${icons[Math.min(i,2)]}</div>
+    <div class="finfo"><div class="fname">${m.fault_name||'Unknown Fault'} — ${m.name}</div><div class="fdesc">${m.fault_desc||'See maintenance log'}</div></div>
+    <div class="fconf ${confColors[Math.min(i,2)]}">${m.fault_conf?Math.round(m.fault_conf)+'%':'—'}</div>
+  </div>`).join('');
+  document.getElementById('fault-list').innerHTML = html;
+  if (faults[0]) set('mc1', faults[0].fault_conf?Math.round(faults[0].fault_conf)+'%':'—');
+}
+
+function updateDOM(){
+  const machines = getMachines();
+  machines.forEach((m,i)=>{
+    const limit=m.limit||100; const pct=Math.min(((m.co2/limit)*100),110).toFixed(0);
+    const el=document.getElementById('mp_'+i); if(el) el.textContent=pct+'%';
+    setW('mf_'+i,Math.min(pct,100));
+    const eEl=document.getElementById('me_'+i); if(eEl) eEl.textContent=m.energy_kw?m.energy_kw.toFixed(1)+' kW':'—';
+  });
+  const totalCo2 = usingLiveData?machines.reduce((s,m)=>s+m.co2,0):S.co2;
+  const totalEnergy = usingLiveData?(machines.reduce((s,m)=>s+(m.energy_kwh||m.energy_kw*8),0)||S.energy):S.energy;
+  const totalReused = usingLiveData?machines.reduce((s,m)=>s+(m.reused||0),0)||S.reused:S.reused;
+  set('k1',Math.round(totalCo2)+' kg'); set('k2',Math.round(totalEnergy).toLocaleString()+' kWh');
+  set('k3',Math.round(totalReused)+' kWh'); set('k4',S.acc.toFixed(1)+'%');
+  set('r1',(S.r1||18).toFixed(1)+' kWh'); set('r2',(S.r2||11).toFixed(1)+' kWh');
+  set('r3',(S.r3||7).toFixed(1)+' kWh'); set('rtot',(S.r1||18).toFixed(1)+' kWh/shift');
+  set('rco2',((S.r1||18)*.5).toFixed(0)+' kg CO₂');
+  set('mw','+'+(14+Math.random()*9).toFixed(0)+'%');
+  set('h-acc','>'+S.acc.toFixed(0)+'%'); set('h-save','£'+Math.round(S.save));
+  set('i1','>'+S.acc.toFixed(0)+'%'); set('i4','£'+Math.round(S.save));
+  set('i3',(totalReused/totalEnergy*100).toFixed(0)+'%');
+  set('i2','−'+(17+Math.random()*8).toFixed(0)+'%');
+  if(machines.length>=2){ const hr=machines.reduce((a,b)=>(a.reused||0)>(b.reused||0)?a:b); set('reuse-src-name',hr.name); }
+  const base=[34,21,18,14,9,4];
+  base.forEach((b,i)=>{ const v=Math.max(2,Math.min(46,b+(Math.random()-.5)*4));
+    const f=document.getElementById('x'+(i+1)),p=document.getElementById('x'+(i+1)+'p');
+    if(f)f.style.width=v.toFixed(0)+'%'; if(p)p.textContent=v.toFixed(0)+'%'; });
+  const el=document.getElementById('fclock');
+  if(el) el.textContent=new Date().toLocaleTimeString();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════════
+const charts = {};
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+
+function makeBarChart(){
+  const ctx=document.getElementById('barChart'); if(!ctx) return;
+  const machines=getMachines();
+  charts.bar=new Chart(ctx,{type:'bar',data:{
+    labels:machines.map(m=>m.name),
+    datasets:[{label:'CO₂ (kg)',data:machines.map(m=>m.co2),
+      backgroundColor:machines.map(m=>{const s=statusForCO2(m.co2,m.limit||100);return s==='safe'?'rgba(14,165,233,0.65)':s==='warn'?'rgba(245,158,11,0.65)':'rgba(239,68,68,0.65)';}),
+      borderColor:machines.map(m=>{const s=statusForCO2(m.co2,m.limit||100);return s==='safe'?'rgba(14,165,233,1)':s==='warn'?'rgba(245,158,11,1)':'rgba(239,68,68,1)';}),
+      borderWidth:2,borderRadius:6,borderSkipped:false
+    },{label:'Limit',data:machines.map(m=>m.limit||100),type:'line',borderColor:'rgba(239,68,68,0.55)',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{color:'rgba(14,165,233,0.08)'},ticks:{color:'#3b7dad',font:{size:11}}},y:{min:0,grid:{color:'rgba(14,165,233,0.08)'},ticks:{color:'#3b7dad',font:{size:11}}}},animation:{duration:600}}});
+}
+
+const sparkData=Array.from({length:20},(_,i)=>170+Math.sin(i/3)*35+Math.random()*25);
+function makeSparkChart(){
+  const ctx=document.getElementById('sparkChart'); if(!ctx) return;
+  charts.spark=new Chart(ctx,{type:'line',data:{labels:sparkData.map(()=>''),datasets:[{data:[...sparkData],borderColor:'rgba(14,165,233,0.9)',borderWidth:2,pointRadius:0,fill:true,backgroundColor:(ctx2)=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,90);g.addColorStop(0,'rgba(14,165,233,0.3)');g.addColorStop(1,'rgba(14,165,233,0.02)');return g;},tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:400}}});
+}
+
+const waveLabels=Array.from({length:80},(_,i)=>i); let waveOffset=0;
+function genWave(){ return waveLabels.map(i=>{const t=i/80*Math.PI*10;let y=Math.sin(t+waveOffset)*12+Math.sin(t*2.2+waveOffset*1.3)*5;if(Math.abs(i-35)<5)y+=Math.sin((i-35)/5*Math.PI)*28*(0.7+Math.random()*.6);if(Math.abs(i-58)<4)y+=Math.sin((i-58)/4*Math.PI)*18*(0.5+Math.random()*.8);return y+50;}); }
+function makeWaveChart(){
+  const ctx=document.getElementById('waveChart'); if(!ctx) return;
+  charts.wave=new Chart(ctx,{type:'line',data:{labels:waveLabels,datasets:[{data:genWave(),borderColor:'rgba(14,165,233,0.85)',borderWidth:1.5,pointRadius:0,fill:false,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false,min:0,max:100}},animation:{duration:0}}});
+}
+
+function makeTimelineChart(){
+  const ctx=document.getElementById('timelineChart'); if(!ctx) return;
+  const hours=Array.from({length:24},(_,i)=>i+':00');
+  const tariff=hours.map((_,h)=>h>=7&&h<=22?65+Math.random()*25:15+Math.random()*15);
+  const solar=hours.map((_,h)=>h>=8&&h<=17?Math.max(0,Math.sin((h-8)/9*Math.PI)*60):0);
+  const aiWin=hours.map((_,h)=>h>=22||h<=5?50:0);
+  charts.tl=new Chart(ctx,{type:'bar',data:{labels:hours,datasets:[{label:'Peak Tariff',data:tariff,backgroundColor:'rgba(239,68,68,0.45)',borderRadius:2,order:2},{label:'Solar',data:solar,backgroundColor:'rgba(13,148,136,0.45)',borderRadius:2,order:2},{label:'AI Window',data:aiWin,backgroundColor:'rgba(14,165,233,0.3)',borderRadius:2,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:false,grid:{display:false},ticks:{color:'#7fb8d8',font:{size:9},maxTicksLimit:8}},y:{display:false,min:0,max:100}},animation:{duration:500}}});
+}
+
+function makeFlowChart(){
+  const ctx=document.getElementById('flowChart'); if(!ctx) return;
+  const machines=getMachines();
+  charts.flow=new Chart(ctx,{type:'bar',data:{
+    labels:machines.map(m=>m.name),
+    datasets:[
+      {label:'Consumed',data:machines.map(m=>+(m.energy_kw*8||40).toFixed(0)),backgroundColor:'rgba(14,165,233,0.5)',borderRadius:4},
+      {label:'Reused',data:machines.map(m=>+(m.reused||Math.random()*10+2).toFixed(0)),backgroundColor:'rgba(13,148,136,0.6)',borderRadius:4}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#3b7dad',font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{color:'#7fb8d8',font:{size:10}}},y:{grid:{color:'rgba(14,165,233,0.08)'},ticks:{color:'#7fb8d8',font:{size:10}}}},animation:{duration:600}}});
+}
+
+function updateCharts(){
+  const machines=getMachines();
+  if(charts.bar){
+    charts.bar.data.labels=machines.map(m=>m.name);
+    charts.bar.data.datasets[0].data=machines.map(m=>+m.co2.toFixed(1));
+    charts.bar.data.datasets[0].backgroundColor=machines.map(m=>{const s=statusForCO2(m.co2,m.limit||100);return s==='safe'?'rgba(14,165,233,0.65)':s==='warn'?'rgba(245,158,11,0.65)':'rgba(239,68,68,0.65)';});
+    charts.bar.data.datasets[1].data=machines.map(m=>m.limit||100);
+    charts.bar.update('none');
+  }
+  if(charts.spark){ sparkData.shift(); sparkData.push(S.co2/8+Math.random()*12); charts.spark.data.datasets[0].data=[...sparkData]; charts.spark.update('none'); }
+  if(charts.wave){ waveOffset+=.15; charts.wave.data.datasets[0].data=genWave(); charts.wave.update('none'); }
+  if(charts.flow){
+    charts.flow.data.labels=machines.map(m=>m.name);
+    charts.flow.data.datasets[0].data=machines.map(m=>+(m.energy_kw*8||40).toFixed(0));
+    charts.flow.data.datasets[1].data=machines.map(m=>+(m.reused||Math.random()*10+2).toFixed(0));
+    charts.flow.update('none');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TICKER
+// ═══════════════════════════════════════════════════════════
+(function(){
+  const items=[
+    {c:'#0ea5e9',t:'CHRONO-WATT LIVE'},
+    {c:'#0d9488',t:'ENERGY REUSE ACTIVE'},
+    {c:'#f59e0b',t:'OFF-PEAK WINDOW: 22:00'},
+    {c:'#ef4444',t:'MACHINE C: CO₂ LIMIT EXCEEDED'},
+    {c:'#7c3aed',t:'PREDICTION MODEL: 91.4% ACCURACY'},
+    {c:'#0ea5e9',t:'SUSTAINABILITY HACKATHON 2025'},
+    {c:'#0d9488',t:'CARBON BUDGET ENFORCED'},
+    {c:'#f59e0b',t:'BEARING WEAR DETECTED'},
+  ];
+  const inner=document.getElementById('ticker');
+  const makeItems=()=>items.map(({c,t})=>`<span class="ti"><span class="td" style="background:${c}"></span>${t}</span>`).join('');
+  inner.innerHTML=makeItems()+makeItems();
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', ()=>{
+  rebuildMachineCards();
+  rebuildAlerts();
+  rebuildFaultList();
+  makeBarChart();
+  makeSparkChart();
+  makeWaveChart();
+  makeTimelineChart();
+  makeFlowChart();
+  updateDOM();
+  updatePredictionUI(getMachines());
+  setInterval(tick, 2000);
+});
+</script>
+</body>
+</html>
